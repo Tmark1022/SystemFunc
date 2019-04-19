@@ -31,6 +31,7 @@ int main(int argc, char *argv[]){
 			if (i == n - 1){
 				sleep(1);
 				printf("i am parent, my pid = %d\n", getpid());
+				sleep(20);
 			}
 		}
 	}

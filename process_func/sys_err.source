@@ -1,0 +1,17 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+
+//int bss_var0;
+// char bss_var1;
+//int data_var1 = 10;
+
+void sys_err(const char * ch){
+	static int data_var2 = 10;
+
+	perror(ch);
+	exit(1);
+}
+

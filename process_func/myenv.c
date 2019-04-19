@@ -7,7 +7,7 @@ extern char ** environ;
 int main(int argc, char *argv[]){
 	
 	char ** temp = environ;
-	while(temp != NULL){
+	while(*temp != NULL){	
 		printf("%s\n", *temp);
 		++temp;
 	}

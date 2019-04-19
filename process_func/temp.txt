@@ -1,0 +1,117 @@
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.2   6676  5096 ?        Ss    2018   5:05 /sbin/init
+root         2  0.0  0.0      0     0 ?        S     2018   0:00 [kthreadd]
+root         3  0.0  0.0      0     0 ?        S     2018   7:10 [ksoftirqd/0]
+root         5  0.0  0.0      0     0 ?        S<    2018   0:00 [kworker/0:0H]
+root         7  0.0  0.0      0     0 ?        S     2018  28:08 [rcu_sched]
+root         8  0.0  0.0      0     0 ?        S     2018   0:00 [rcu_bh]
+root         9  0.0  0.0      0     0 ?        S     2018   0:00 [migration/0]
+root        10  0.0  0.0      0     0 ?        S     2018   2:01 [watchdog/0]
+root        11  0.0  0.0      0     0 ?        S     2018   0:00 [kdevtmpfs]
+root        12  0.0  0.0      0     0 ?        S<    2018   0:00 [netns]
+root        13  0.0  0.0      0     0 ?        S<    2018   0:00 [perf]
+root        14  0.0  0.0      0     0 ?        S     2018   0:06 [khungtaskd]
+root        15  0.0  0.0      0     0 ?        S<    2018   0:00 [writeback]
+root        16  0.0  0.0      0     0 ?        SN    2018   0:00 [ksmd]
+root        17  0.0  0.0      0     0 ?        SN    2018   2:00 [khugepaged]
+root        18  0.0  0.0      0     0 ?        S<    2018   0:00 [crypto]
+root        19  0.0  0.0      0     0 ?        S<    2018   0:00 [kintegrityd]
+root        20  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        21  0.0  0.0      0     0 ?        S<    2018   0:00 [kblockd]
+root        22  0.0  0.0      0     0 ?        S<    2018   0:00 [ata_sff]
+root        23  0.0  0.0      0     0 ?        S<    2018   0:00 [md]
+root        24  0.0  0.0      0     0 ?        S<    2018   0:00 [devfreq_wq]
+root        28  0.0  0.0      0     0 ?        S     2018   0:00 [kswapd0]
+root        29  0.0  0.0      0     0 ?        S<    2018   0:00 [vmstat]
+root        30  0.0  0.0      0     0 ?        S     2018   0:00 [fsnotify_mark]
+root        31  0.0  0.0      0     0 ?        S     2018   0:00 [ecryptfs-kthrea]
+root        47  0.0  0.0      0     0 ?        S<    2018   0:00 [kthrotld]
+root        48  0.0  0.0      0     0 ?        S<    2018   0:00 [acpi_thermal_pm]
+root        49  0.0  0.0      0     0 ?        S     2018   0:00 [vballoon]
+root        50  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        51  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        52  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        53  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        54  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        55  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        56  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        57  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        58  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root        59  0.0  0.0      0     0 ?        S     2018   0:00 [scsi_eh_0]
+root        60  0.0  0.0      0     0 ?        S<    2018   0:00 [scsi_tmf_0]
+root        61  0.0  0.0      0     0 ?        S     2018   0:00 [scsi_eh_1]
+root        62  0.0  0.0      0     0 ?        S<    2018   0:00 [scsi_tmf_1]
+root        66  0.0  0.0      0     0 ?        S<    2018   0:00 [ipv6_addrconf]
+root        79  0.0  0.0      0     0 ?        S<    2018   0:00 [deferwq]
+root        80  0.0  0.0      0     0 ?        S<    2018   0:00 [charger_manager]
+root       120  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       121  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       122  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       123  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       124  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       125  0.0  0.0      0     0 ?        S<    2018   0:00 [kpsmoused]
+root       126  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       127  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       128  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       142  0.0  0.0      0     0 ?        S<    2018   0:00 [ttm_swap]
+root       225  0.0  0.0      0     0 ?        S<    2018   0:00 [raid5wq]
+root       259  0.0  0.0      0     0 ?        S<    2018   0:00 [bioset]
+root       274  0.0  0.0      0     0 ?        S<    2018   3:58 [kworker/0:1H]
+root       291  0.0  0.0      0     0 ?        S     2018  10:39 [jbd2/vda1-8]
+root       292  0.0  0.0      0     0 ?        S<    2018   0:00 [ext4-rsv-conver]
+ubuntu     322  0.0  0.1  13304  3056 ?        S    Mar25   0:00 sshd: ubuntu@pts/2
+ubuntu     323  0.0  0.2   6948  4612 pts/2    Ss+  Mar25   0:00 -bash
+root       351  0.0  0.1   7016  3176 ?        Ss    2018  39:55 /lib/systemd/systemd-journald
+root       358  0.0  0.0      0     0 ?        S<    2018   0:00 [iscsi_eh]
+root       359  0.0  0.0      0     0 ?        S     2018   0:00 [kauditd]
+root       379  0.0  0.0      0     0 ?        S<    2018   0:00 [ib_addr]
+root       387  0.0  0.0      0     0 ?        S<    2018   0:00 [ib_mcast]
+root       389  0.0  0.0      0     0 ?        S<    2018   0:00 [ib_nl_sa_wq]
+root       390  0.0  0.0      0     0 ?        S<    2018   0:00 [ib_cm]
+root       391  0.0  0.0      0     0 ?        S<    2018   0:00 [iw_cm_wq]
+root       392  0.0  0.0      0     0 ?        S<    2018   0:00 [rdma_cm]
+root       393  0.0  0.0  13280  1372 ?        Ss    2018   0:00 /sbin/lvmetad -f
+root       419  0.0  0.1  13968  3752 ?        Ss    2018   0:14 /lib/systemd/systemd-udevd
+systemd+   545  0.0  0.1  12596  2336 ?        Ssl   2018   0:17 /lib/systemd/systemd-timesyncd
+root       695  0.0  0.3  96176  6680 ?        Ssl   2018   0:07 /usr/bin/lxcfs /var/lib/lxcfs/
+root       713  0.0  0.6 852608 13068 ?        Ssl   2018   9:46 /usr/lib/snapd/snapd
+message+   715  0.0  0.1   5932  3584 ?        Ss    2018   0:02 /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation
+root       735  0.0  0.0   2240   552 ?        Ss    2018   0:00 /usr/sbin/acpid
+root       750  0.0  0.1   4072  2884 ?        Ss    2018   0:15 /lib/systemd/systemd-logind
+root       756  0.0  0.5  37532  9916 ?        Ssl   2018  16:52 /usr/lib/accountsservice/accounts-daemon
+syslog     759  0.0  0.1  30724  3536 ?        Ssl   2018  10:37 /usr/sbin/rsyslogd -n
+root       763  0.0  0.1   5444  2772 ?        Ss    2018   1:52 /usr/sbin/cron -f
+daemon     768  0.0  0.0   3476  1920 ?        Ss    2018   0:00 /usr/sbin/atd -f
+root       817  0.0  0.4  68392  7936 ?        Ssl   2018 282:28 /usr/local/qcloud/YunJing/YDEyes/YDService
+root       835  0.0  0.0   3128   128 ?        Ss    2018   0:01 /sbin/mdadm --monitor --pid-file /run/mdadm/monitor.pid --daemonise --scan --syslog
+root       928  0.0  0.4  35764  7800 ?        Ssl   2018   0:00 /usr/lib/policykit-1/polkitd --no-debug
+root       961  0.0  0.2  10004  5568 ?        Ss    2018   8:33 /usr/sbin/sshd -D
+root       994  0.0  0.0   2980   124 ?        Ss    2018  10:28 /sbin/iscsid
+root       995  0.0  0.1   3440  2832 ?        S<Ls  2018  48:18 /sbin/iscsid
+root      1141  0.0  0.0   4616  1740 tty1     Ss+   2018   0:00 /sbin/agetty --noclear tty1 linux
+root      1142  0.0  0.1   4432  2040 ttyS0    Ss+   2018   0:00 /sbin/agetty --keep-baud 115200 38400 9600 ttyS0 vt220
+root      1158  0.0  0.0  45924  1000 ?        Ss    2018   0:00 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+www-data  1159  0.0  0.2  46148  4272 ?        S     2018   5:18 nginx: worker process
+root      1333  0.0  0.1  14048  3160 ?        Sl    2018   4:07 /usr/local/qcloud/stargate/sgagent -d
+root      1359  0.0  0.2  15444  4440 ?        Ssl   2018  65:14 /usr/local/qcloud/YunJing/YDLive/YDLive
+root      1362  0.0  0.0      0     0 ?        S    Mar01   0:33 [kworker/u2:1]
+root      6847  0.0  0.0      0     0 ?        S    Mar22   0:09 [kworker/0:2]
+ubuntu   11601  0.0  0.3  14964  7352 pts/1    S+   17:22   0:00 vim waitpid.c
+ubuntu   11843  0.0  0.0   2196   544 pts/0    S+   17:25   0:00 ./waitpid
+ubuntu   11846  0.0  0.1   7620  3272 pts/0    R+   17:25   0:00 ps aux
+ubuntu   11847  0.0  0.0   2196    52 pts/0    S+   17:25   0:00 ./waitpid
+root     14830  0.0  0.3  13172  6264 ?        Ss   Mar25   0:00 sshd: ubuntu [priv]
+ubuntu   14832  0.0  0.2   6232  4292 ?        Ss   Mar25   0:00 /lib/systemd/systemd --user
+ubuntu   14833  0.0  0.0   7640  1452 ?        S    Mar25   0:00 (sd-pam)
+root     14874  0.0  0.3  10392  6696 ?        S     2018   2:12 barad_agent
+root     14875  0.0  0.4  10904  7996 ?        S     2018  86:36 barad_agent
+root     14876  0.3  0.5  64572 10728 ?        Sl    2018 504:52 barad_agent
+ubuntu   14897  0.0  0.1  13304  3072 ?        S    Mar25   0:00 sshd: ubuntu@pts/0
+ubuntu   14900  0.0  0.2   7104  4816 pts/0    Ss   Mar25   0:00 -bash
+root     14917  0.0  0.3  13172  6236 ?        Ss   Mar25   0:00 sshd: ubuntu [priv]
+ubuntu   14947  0.0  0.1  13312  3224 ?        S    Mar25   0:01 sshd: ubuntu@pts/1
+ubuntu   14948  0.0  0.2   7060  4988 pts/1    Ss   Mar25   0:00 -bash
+ubuntu   15010  0.0  0.0   4180   580 pts/0    T    Mar25   0:00 wc
+root     19066  0.0  0.0      0     0 ?        S    12:19   0:00 [kworker/0:0]
+root     29450  0.0  0.0      0     0 ?        S    Mar24   0:03 [kworker/u2:2]
+root     32738  0.0  0.3  13172  6192 ?        Ss   Mar25   0:00 sshd: ubuntu [priv]
