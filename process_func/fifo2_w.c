@@ -17,8 +17,6 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 	
-	write(STDOUT_FILENO, "find read end", strlen("find read end"));
-
 	for(int j = 0; j < 30; ++j){
 		sprintf(buf, "i am tmark, this is index %d\n", j);
 		int n = write(w_fd, buf, strlen(buf));

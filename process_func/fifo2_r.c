@@ -16,8 +16,6 @@ int main(int argc, char *argv[]){
 		perror("open error");
 		exit(1);
 	}
-
-	write(STDOUT_FILENO, "find write end", strlen("find write end"));
 	
 	int n;
 	while(0 != (n = read(r_fd, buf, 1024))){
