@@ -1,16 +1,22 @@
 /*************************************************************************
  @ Author	: tmark
- @ Created Time	: Fri 01 May 2020 06:03:00 PM CST
- @ File Name	: create.c
- @ Description	: 简单的线程创建demo1
- @ Note		: 需要注意的是，如果主线程执行到main的return，那么相当于执行exit一般，
-		  整个程序（无论是否还有线程在执行）都结束了, 注意区分主线程执行pthread_exit（等待所有线程都结束才真正地exit）
+ @ Created Time	: Fri 01 May 2020 09:22:44 PM CST
+ @ File Name	: exit.c
+ @ Description	: 
  ************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+
+typedef struct{
+	int id;
+	char name[256];
+}user_data_t;
+
+// 全局变量
+user_data_t gData;
 
 void perror_thread(int num)
 {
@@ -21,8 +27,13 @@ void perror_thread(int num)
 void * ThreadHandler(void * arg) 
 {
 	printf("thread, pid : %d, threadid : %lu, pgrpid : %d, sid : %d, tgpid : %d\n", getpid(), pthread_self(), getpgid(0), getsid(0), tcgetpgrp(0));	
+
+	// call pthread_exit
+	pthread_exit(NULL);
+
+	user_data_t * pointer = (user_data_t *)arg;	
+	printf("gData(%d, %s), arg(%d, %s)\n", gData.id, gData.name, pointer->id, pointer->name);
 	fflush(NULL);
-	sleep(60);
 
 	return NULL;
 }
@@ -30,14 +41,22 @@ void * ThreadHandler(void * arg)
 int main(int argc, char *argv[]) {
 	pthread_t ti;
 	int ret;
-	ret = pthread_create(&ti, NULL, ThreadHandler, NULL);
+	gData.id = 1;
+	strcpy(gData.name, "hello world");	
+	user_data_t * arg = malloc(sizeof(user_data_t));
+	arg->id = 2;
+	sprintf(arg->name, "terry %s", "mark");
+	ret = pthread_create(&ti, NULL, ThreadHandler, (void *)arg);
 	if (0 != ret) {
 		perror_thread(ret);
 	}
 
+	// call pthread_exit
+	pthread_exit(NULL);
+
 	printf("main, pid : %d, threadid : %lu, pgrpid : %d, sid : %d, tgpid : %d\n", getpid(), pthread_self(), getpgid(0), getsid(0), tcgetpgrp(0));	
 	// wait for child thread
-	sleep(60);
+	sleep(1);
 
 	return 0;
 }
