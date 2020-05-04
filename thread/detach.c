@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
 	pthread_t arr[THREAD_CNT];
 	int ret;
 	for(int i = 0; i < THREAD_CNT; ++i) {
-		// 循环创建子进程
+		// 循环创建线程
 		ret = pthread_create(arr + i, NULL, ThreadHandler, (void *)i);			
 		if (ret) {
 			perror_thread(ret, "", 1);
