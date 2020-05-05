@@ -4,7 +4,7 @@ Res = $(patsubst %.c, %, $(Src))
 all:$(Res)
 
 $(Res):%:%.c
-	gcc $< -o $@ -Wall
+	gcc $< -o $@ -Wall -std=c99
 	gcc $< -o $@.g -Wall -g
 
 clean:
