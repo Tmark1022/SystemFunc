@@ -43,7 +43,7 @@ void * ThreadProducer(void *arg)
 		pthread_cond_signal(&cond);
 		pthread_mutex_unlock(&mutex);
 
-		//sleep(rand() % 3);
+		sleep(rand() % 3);
 	}
 	
 	return NULL;
@@ -64,8 +64,10 @@ void * ThreadConsumer(void *arg)
 		Node * tmp = head;
 		head = head->next;
 		printf("==================consumer, %lu, no is %d\n", pthread_self(), tmp->no);
-
 		pthread_mutex_unlock(&mutex);
+
+		free(tmp);
+		tmp = NULL;
 
 		sleep(rand() % 3);
 	}
