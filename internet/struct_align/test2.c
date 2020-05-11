@@ -27,20 +27,20 @@ struct A{
 	long d;			// 8
 	int e;			// 16
 	short f;		// 20
-	char g;			// 21
+	char g;			// 23
 };
 
-// 64
+// 				default(8)	n = 4
 struct B{
-	char a;			// 0
-	short b;		// 2
-	char c[10];		// 3
-	long d;			// 16
-	struct C e;		// 24
-	double f;		// 48
-	short g;		// 56
+	char a;			// 0		0
+	short b;		// 2		2
+	char c[10];		// 3		3
+	long d;			// 16		16
+	struct C e;		// 24		24
+	double f;		// 48		40	
+	short g;		// 56		48
 };
-
+//			total	64		52
 #define PRINT_STRUCT(x) do { printf(#x", size = %ld, c offset is %ld, i offset is %ld, l offset is %ld\n", \
 		sizeof(x), offsetof(x, c), offsetof(x, i), offsetof(x, l));} while(0)
 

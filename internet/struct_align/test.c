@@ -7,7 +7,10 @@
 // set packing size, suppress padding
 // pragma pack(n), individual member 的size小于n还是按照自身的size大小进行内存对齐，大于n的就按照n进行。
 // Expected #pragma pack parameter to be '1', '2', '4', '8', or '16' on gcc compiler
-#pragma pack(4)
+// 64位架构， 相当于默认值n为8
+// 32位架构， 相当于默认值n为4
+// #pragma pack(4)
+
 
 
 #include <stdio.h>
