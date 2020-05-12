@@ -9,7 +9,8 @@
 // Expected #pragma pack parameter to be '1', '2', '4', '8', or '16' on gcc compiler
 // 64位架构， 相当于默认值n为8
 // 32位架构， 相当于默认值n为4
-// #pragma pack(4)
+
+#pragma pack(4)
 
 
 
@@ -44,6 +45,12 @@ struct D {
 	char c;		
 };
 
+struct F {
+	char c;		
+	long l;
+	int i;
+};
+
 #define PRINT_STRUCT(x) do { printf(#x", size = %ld, c offset is %ld, i offset is %ld, l offset is %ld\n", \
 		sizeof(x), offsetof(x, c), offsetof(x, i), offsetof(x, l));} while(0)
 
@@ -55,5 +62,6 @@ int main(int argc, char *argv[]) {
 	PRINT_STRUCT(struct B);
 	PRINT_STRUCT(struct C);
 	PRINT_STRUCT(struct D);
+	PRINT_STRUCT(struct F);
 	return 0;
 }
