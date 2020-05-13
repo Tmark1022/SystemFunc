@@ -56,7 +56,8 @@ struct F {
 
 
 int main(int argc, char *argv[]) {
-	printf("short = %ld, int = %ld, long = %ld, long long = %ld, double = %ld, float = %ld\n", sizeof(short), sizeof(int), sizeof(long), sizeof(long long), sizeof(double), sizeof(float));
+	void * aa;
+	printf("short = %ld, int = %ld, long = %ld, long long = %ld, double = %ld, float = %ld, void * = %ld\n", sizeof(short), sizeof(int), sizeof(long), sizeof(long long), sizeof(double), sizeof(float), sizeof(aa));
 	
 	PRINT_STRUCT(struct A);
 	PRINT_STRUCT(struct B);
