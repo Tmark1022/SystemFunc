@@ -101,18 +101,18 @@ int Close(int fd)
 	return ret;
 }
 
+// @buf : 缓冲区指针
+// count : 要读取的字节数
 ssize_t ReadCount(int fd, void *buf, size_t count)
 {
 	// 与普通read一般, 不做buf大小合法判断		
-	char * tmp = (char *)buf;			// rid警告
 	size_t left = count;	
 	size_t index = 0;
 	while (left > 0) {
 		ssize_t cnt = read(fd, buf + index, left);
 		if (0 == cnt) {
 			// EOF
-			tmp[index] = '\0';
-			return index;	
+			break;
 		}
 		else if (-1 == cnt) {
 			// error
@@ -134,11 +134,92 @@ ssize_t ReadCount(int fd, void *buf, size_t count)
 	}
 	
 	// 尾部增加'\0'
+	char * tmp = (char *)buf;			// get rid of the warning
 	tmp[index] = '\0';
 	return index;
 }
 
-ssize_t ReadLine(int fd, void *buf, size_t count);
+// @buf : 缓冲区指针 
+// @size : 缓冲区大小 
+// #return : line size
+// buf不读入\n
+ssize_t ReadLine(int fd, void *buf, size_t size)
+{
+	size_t index = 0;
+	char ch;
+	char * tmp = (char *)buf;			
 
-ssize_t WriteCount(int fd, const void *buf, size_t count);
+	while (1) {
+		if ( index >= size ) {	
+			PrintError(stderr, EFAULT, "call ReadLine failed", 0);		
+			return -1;
+		}
+
+		ssize_t cnt = read(fd, &ch, 1);
+		if (0 == cnt) {
+			// EOF
+			break;
+		} else if (-1 == cnt) {
+			// error
+			if (EAGAIN == errno || EWOULDBLOCK == errno) {
+				// read 设置非阻塞
+				usleep(1000);
+				continue;
+			} else if (EINTR == errno) {
+				// 信号中断慢速系统调用
+				continue;
+			} else {	
+				PrintError(stderr, 0, "call ReadLine failed", EXIT_FAILURE);		
+			}	
+		} else {
+			// 正常读取
+			if ('\n' == ch) {			
+				break;
+			}
+
+			tmp[index] = ch;	
+			index += cnt;
+		}
+	}
+	
+	// 尾部增加'\0'
+	tmp[index] = '\0';
+	return index;
+}
+
+// @buf : 缓冲区指针
+// @count : 写的字节数
+ssize_t WriteCount(int fd, const void *buf, size_t count)
+{
+	// 该接口不完善， 后续继续优化
+	// 与普通write一般, 不做buf大小合法判断		
+	size_t left = count;	
+	size_t index = 0;
+	while (left > 0) {
+		ssize_t cnt = write(fd, buf + index, left);
+		if (0 == cnt) {
+			// 磁盘满了?, 无东西可以写？
+			break;
+		}
+		else if (-1 == cnt) {
+			// error
+			if (EAGAIN == errno || EWOULDBLOCK == errno) {
+				// read 设置非阻塞
+				usleep(1000);
+				continue;
+			} else if (EINTR == errno) {
+				// 信号中断慢速系统调用
+				continue;
+			} else {	
+				PrintError(stderr, 0, "call WriteCount failed", EXIT_FAILURE);		
+			}	
+		} else {
+			// 正常写
+			left -= cnt;	
+			index += cnt;
+		}
+	}
+	
+	return index;
+}
 
