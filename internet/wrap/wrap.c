@@ -142,7 +142,7 @@ ssize_t ReadCount(int fd, void *buf, size_t count)
 // @buf : 缓冲区指针 
 // @size : 缓冲区大小 
 // #return : line size
-// buf不读入\n
+// buf读入\n
 ssize_t ReadLine(int fd, void *buf, size_t size)
 {
 	size_t index = 0;
@@ -172,13 +172,13 @@ ssize_t ReadLine(int fd, void *buf, size_t size)
 				PrintError(stderr, 0, "call ReadLine failed", EXIT_FAILURE);		
 			}	
 		} else {
+			tmp[index] = ch;	
+			index += cnt;
+
 			// 正常读取
 			if ('\n' == ch) {			
 				break;
 			}
-
-			tmp[index] = ch;	
-			index += cnt;
 		}
 	}
 	

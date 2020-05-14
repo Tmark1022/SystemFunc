@@ -24,5 +24,6 @@ int Close(int fd);
 
 ssize_t ReadCount(int fd, void *buf, size_t count);
 ssize_t WriteCount(int fd, const void *buf, size_t count);
+ssize_t ReadLine(int fd, void *buf, size_t size);
 
 #endif
