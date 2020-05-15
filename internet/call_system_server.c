@@ -18,8 +18,8 @@ void DoReadWrite(int cfd)
 	}
 
 	int cnt, status;
-	while ((cnt = ReadLine(cfd, buf, 1024)) > 0) {
-		// 去掉尾部\n
+	while ((cnt = ReadLine(cfd, buf, 1023)) > 0) {
+		// 去掉尾部\n,并改成'\0'
 		buf[cnt - 1] = '\0';
 		status = system(buf);
 		fprintf(stderr, "read cnt is %d\nget string :%s\nreturn status is %d\n", cnt, buf, status);	

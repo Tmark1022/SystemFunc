@@ -12,7 +12,8 @@ char buf[1024];
 void DoReadWrite(int cfd) 
 {
 	int cnt;
-	while ((cnt = ReadLine(cfd, buf, 1024)) > 0) {
+	while ((cnt = ReadLine(cfd, buf, 1023)) > 0) {
+		buf[cnt] = '\0'; 
 		printf("read cnt is %d\n, get string :%s\n", cnt, buf);	
 		WriteCount(cfd, buf, cnt);
 	}

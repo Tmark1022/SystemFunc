@@ -133,9 +133,6 @@ ssize_t ReadCount(int fd, void *buf, size_t count)
 		}
 	}
 	
-	// 尾部增加'\0'
-	char * tmp = (char *)buf;			// get rid of the warning
-	tmp[index] = '\0';
 	return index;
 }
 
@@ -182,8 +179,6 @@ ssize_t ReadLine(int fd, void *buf, size_t size)
 		}
 	}
 	
-	// 尾部增加'\0'
-	tmp[index] = '\0';
 	return index;
 }
 
