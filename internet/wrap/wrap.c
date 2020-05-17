@@ -218,3 +218,24 @@ ssize_t WriteCount(int fd, const void *buf, size_t count)
 	return index;
 }
 
+ssize_t Read(int fd, void *buf, size_t count)
+{
+	ssize_t cnt = read(fd, buf, count);
+	if (-1 == cnt) {
+		// error
+		PrintError(stderr, 0, "call Read failed", EXIT_FAILURE);		
+	}
+
+	return cnt;
+}
+
+ssize_t Write(int fd, const void *buf, size_t count)
+{
+	ssize_t cnt = write(fd, buf, count);
+	if (-1 == cnt) {
+		PrintError(stderr, 0, "call Write failed", EXIT_FAILURE);		
+	}
+	return cnt;
+
+}
+
