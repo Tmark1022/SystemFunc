@@ -239,3 +239,35 @@ ssize_t Write(int fd, const void *buf, size_t count)
 
 }
 
+ssize_t ReadLoop(int fd, void *buf, size_t count)
+{	
+	size_t left = count;	
+	size_t index = 0;
+	while (left > 0) {
+		ssize_t cnt = read(fd, buf + index, left);
+		if (0 == cnt) {
+			// EOF
+			break;
+		}
+		else if (-1 == cnt) {
+			// error
+			if (EAGAIN == errno || EWOULDBLOCK == errno) {
+				// read 设置非阻塞
+				// 非阻塞读到底
+				break;
+			} else if (EINTR == errno) {
+				// 信号中断慢速系统调用
+				continue;
+			} else {	
+				PrintError(stderr, 0, "call ReadLoop failed", EXIT_FAILURE);		
+			}	
+		} else {
+			// 正常读取
+			left -= cnt;	
+			index += cnt;
+		}
+	}
+	
+	return index;
+}
+
