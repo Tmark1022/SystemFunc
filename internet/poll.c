@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	struct sockaddr_in serverAddr, tmpAddr;
-	socklen_t addrlen;
+	socklen_t addrlen = sizeof(struct sockaddr_in);
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(defaultPort);
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
