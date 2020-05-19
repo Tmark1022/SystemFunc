@@ -5,6 +5,7 @@
  @ Description	: 常用网络编程函数接口的封装
  ************************************************************************/
 #include "wrap.h"
+#include <fcntl.h>
 
 void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 {
@@ -22,6 +23,19 @@ void PrintAddr(FILE * stream, struct sockaddr_in * addr, const char * headStr)
 	char arr[INET_ADDRSTRLEN];	
 	inet_ntop(AF_INET, &(addr->sin_addr), arr, sizeof(arr)); 
 	fprintf(stream, "%s, %s:%d\n", headStr, arr, ntohs(addr->sin_port));	
+}
+
+void SetNonBlocking(int fd)
+{
+	int flag = fcntl(fd, F_GETFL);
+	if (-1 == flag) {		
+		PrintError(stderr, 0, "fcntl(fd, F_GETFL)", EXIT_FAILURE);	
+	}
+	flag |= O_NONBLOCK;
+	int ret = fcntl(fd, F_SETFL, flag);
+	if (-1 == ret) {
+		PrintError(stderr, 0, "fcntl(fd, F_SETFL, flag)", EXIT_FAILURE);	
+	}
 }
 
 int Socket(int domain, int type, int protocol)
@@ -239,35 +253,4 @@ ssize_t Write(int fd, const void *buf, size_t count)
 
 }
 
-ssize_t ReadLoop(int fd, void *buf, size_t count)
-{	
-	size_t left = count;	
-	size_t index = 0;
-	while (left > 0) {
-		ssize_t cnt = read(fd, buf + index, left);
-		if (0 == cnt) {
-			// EOF
-			break;
-		}
-		else if (-1 == cnt) {
-			// error
-			if (EAGAIN == errno || EWOULDBLOCK == errno) {
-				// read 设置非阻塞
-				// 非阻塞读到底
-				break;
-			} else if (EINTR == errno) {
-				// 信号中断慢速系统调用
-				continue;
-			} else {	
-				PrintError(stderr, 0, "call ReadLoop failed", EXIT_FAILURE);		
-			}	
-		} else {
-			// 正常读取
-			left -= cnt;	
-			index += cnt;
-		}
-	}
-	
-	return index;
-}
 
