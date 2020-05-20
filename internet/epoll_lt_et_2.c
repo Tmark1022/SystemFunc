@@ -4,13 +4,14 @@
  @ File Name	: epoll_lt_et_2.c
  @ Description	: LT与ET对比， 网络套接字, lfd使用LT， cfd使用LT和ET， 进行差异对比
 		  无论lfd还是cfd， 使用的都是非阻塞IO
+		  为了方便在ET模式下也写完， 在写时为LT
+		  需要注意，写与读一样， 在ET模式下也要一遍写完，不然会有问题
  ************************************************************************/
 /*
  *	需要注意一点，在这个demo中， 就算使用ET模式非循环读， 也能够正常地读写数据， 因为就算在ET模式中缓存区还有没有读完的数据，
  *	因为写完会调用EventMod， epoll_ctl EPOLLIN时因为缓存区有没读完的数据， 所以会继续触发事件
+ *	参考epoll_lt_et_3
  * */
-
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,6 +180,7 @@ void DoRead(Node * node)
 		printf("=========读到%d字符, 切换为写\n", cnt);
 		node->bufLen = cnt;
 		node->wIndex = 0;
+
 		EventMod(node, EPOLLOUT);
 	}
 }
@@ -223,7 +225,9 @@ void DoReadLoop(Node * node)
 	printf("***********读到%d字符, 切换为写\n", totalCnt);
 	node->bufLen = totalCnt;
 	node->wIndex = 0;
+
 	EventMod(node, EPOLLOUT);
+
 }
 
 void DoWrite(Node * node)
@@ -252,8 +256,13 @@ void DoWrite(Node * node)
 	if (node->bufLen <= 0) {
 		// 都写光了, 改回读
 		printf("已经写光，切回读\n");
+#ifdef USE_ET_TRIGGER_MODE
+		EventMod(node, EPOLLIN | EPOLLET);
+#else
 		EventMod(node, EPOLLIN);
-	} }
+#endif
+	} 
+}
 
 void EventLoop()
 {
