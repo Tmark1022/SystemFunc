@@ -1,8 +1,8 @@
 /*************************************************************************
  @ Author	: tmark
- @ Created Time	: Wed 20 May 2020 02:20:22 PM CST
- @ File Name	: epoll_lt_et_3.c
- @ Description	: 在ET模式下， 就算不一次把数据都读完, 可以epoll_ctl EPOLLMOD来让下次wait继续触发
+ @ Created Time	: Tue 19 May 2020 11:06:42 AM CST
+ @ File Name	: epoll_lt_et_1.c
+ @ Description	: LT与ET对比， 管道 , 使用非阻塞IO
  ************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,43 +13,21 @@
 #include <errno.h>
 #include <sys/epoll.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #include "wrap/wrap.h"
 
-#define REUSE_ADDR 
 #define EVENTS_MAX 20		// 一次epoll_wait最多处理EVENTS_MAX个事件
 
-// #define USE_LOOP_READ
+#define ET_TRIGGER_METHOD
+#define USE_LOOP_READ
 
 int epfd;			// epoll instance fd
-int lfd;			// listen sock fd
+int pipefd[2];			// 管道的读写端
+
 
 struct epoll_event events[EVENTS_MAX];
 struct epoll_event event;
-
-void InitSock(int port)
-{
-	lfd = Socket(AF_INET, SOCK_STREAM, 0);
-
-#ifdef REUSE_ADDR
-	// 端口复用
-	int opt = 1;
-	if (-1 == setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-		PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
-	}
-#endif
-
-	struct sockaddr_in bindAddr;
-	bindAddr.sin_family = AF_INET;
-	bindAddr.sin_port = htons(port);
-	bindAddr.sin_addr.s_addr = htonl(INADDR_ANY);	
-	Bind(lfd, (struct sockaddr *)&bindAddr, sizeof(bindAddr));  	
-
-	Listen(lfd, SOMAXCONN);
-
-	// 设置nonblocking
-	SetNonBlocking(lfd);
-}
 
 void InitEpoll(int size)
 {
@@ -98,27 +76,11 @@ void EventMod(int fd, uint32_t evbit)
 	}
 }
 
-int DoAccept(int fd)
-{
-	struct sockaddr_in clientAddr;
-	socklen_t addrlen = sizeof(struct sockaddr_in);
-	bzero((void *)&clientAddr, sizeof(struct sockaddr_in));
-	int cfd = Accept(lfd, (struct  sockaddr * )&clientAddr, &addrlen);
-
-	SetNonBlocking(cfd);
-	
-	// ET 触发
-	printf("使用边缘触发\n");
-	EventAdd(cfd, EPOLLIN | EPOLLET);	
-
-	return cfd;
-}
-
 void DoRead(int fd) 
 {
-	char buf[11];
-	// 每次就读10个字符
-	int cnt = Read(fd, buf, 10);
+	char buf[6];
+	// 每次就读5个字符
+	int cnt = Read(fd, buf, 5);
 	if (0 == cnt) {
 		// close
 		EventDel(fd);	
@@ -130,7 +92,7 @@ void DoRead(int fd)
 
 		// TODO, ==================================================
 		// 写完后MOD一下， 那么就算是ET模式， 下次wait还是触发事件
-		EventMod(fd, EPOLLIN | EPOLLET);
+		// EventMod(fd, EPOLLIN | EPOLLET);
 	}
 }
 
@@ -141,8 +103,8 @@ void DoReadLoop(int fd)
 	int totalCnt = 0;
 	
 	while(1) {
-		// 与DoRead一样， 每次读10， 模仿一次读不完的情况
-		ssize_t cnt = read(fd, buf + totalCnt, 10);
+		// 与DoRead一样， 每次读5， 模仿一次读不完的情况
+		ssize_t cnt = read(fd, buf + totalCnt, 5);
 		if (-1 == cnt) {
 			if (EAGAIN == errno) {
 				// 读到结尾了
@@ -185,10 +147,7 @@ void EventLoop()
 		}
 
 		for (int i = 0; i < nready; ++i) {
-			if (events[i].data.fd == lfd) {
-				// new connection
-				DoAccept(events[i].data.fd);
-			} else {
+			if (events[i].data.fd == pipefd[0]) {
 				// read ready
 				if (events[i].events & EPOLLIN) {
 #ifdef USE_LOOP_READ
@@ -204,19 +163,53 @@ void EventLoop()
 
 int main(int argc, char * argv[]) 
 {
-	int port = 8888;
-	if (argc == 2) {
-		port = atoi(argv[1]);
+	if (-1 == pipe(pipefd)) {
+		PrintError(stderr, 0, "pipe failed", EXIT_FAILURE);	
 	}
-
-	InitSock(port);
-	InitEpoll(1024);
 	
-	EventAdd(lfd, EPOLLIN);	
-	EventLoop();
+	int pid = fork();
+	if (-1 == pid) {
+		PrintError(stderr, 0, "fork failed", EXIT_FAILURE);	
+	} else if ( 0 == pid) {
+		// child
+		close(pipefd[0]);
+		char buf[10];
+		int no = 'A';
+		while (1) {
+			printf("child begin write\n");
+			memset(buf, no, 4); 			
+			memset(buf + 4, '\n', 1); 			
+			++no;
+			memset(buf + 5, no, 4); 			
+			memset(buf + 9, '\n', 1); 			
+			++no;
 
-	close(lfd);
-	close(epfd);
+			Write(pipefd[1],buf, sizeof(buf)); 
+			// 每3秒写一遍数据到服务器		
+			sleep(3);
+		}
+
+		close(pipefd[1]);	
+	} else {
+		// parent
+		close(pipefd[1]);
+		InitEpoll(1024);
+
+		// 设置非阻塞IO
+		SetNonBlocking(pipefd[0]);
+
+#ifdef ET_TRIGGER_METHOD
+		printf("使用ET触发\n");
+		EventAdd(pipefd[0], EPOLLIN | EPOLLET);	
+#else
+		printf("使用LT触发\n");
+		EventAdd(pipefd[0], EPOLLIN);	
+#endif
+		EventLoop();
+
+		close(pipefd[0]);
+		close(epfd);
+	}
 
 	return 0;
 }
