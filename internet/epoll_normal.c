@@ -19,10 +19,13 @@
 
 #define EVENTS_MAX 20		// 一次epoll_wait最多处理EVENTS_MAX个事件
 
+#define MAX_WRITE_BYTE		40	// 每次最大写多少字节
+
 typedef struct {
 	int fd;			// 文件描述符
-	int bufLen;		// 缓存有效数据长度
-	char buf[1024];		// 读写缓存
+	int bufLen;		// 缓存有效数据长度(或者写时剩余的未写字节数)
+	char buf[100];		// 读写缓存
+	int wIndex;		// 写开始位置
 } Node;
 
 int epfd;			// epoll instance fd
@@ -71,6 +74,7 @@ Node * CreateNode(int fd)
 	}
 	node->fd = fd;
 	node->bufLen = 0;
+	node->wIndex = 0;
 	memset(node->buf, 0, sizeof(node->buf));
 
 	return node;
@@ -102,7 +106,6 @@ void EventDel(Node * node)
 		PrintError(stderr, 0, tmp, EXIT_FAILURE);	
 	}
 	free(node);
-	node = NULL;
 }
 
 void EventMod(Node * node, uint32_t evbit)
@@ -130,25 +133,52 @@ int DoAccept(Node * node)
 	SetNonBlocking(cfd);
 	
 	// 加入epoll监听
-	EventAdd(CreateNode(lfd), EPOLLIN);	
+	EventAdd(CreateNode(cfd), EPOLLIN);	
 
 	return cfd;
 }
 
-// TODO
-int DoRead(Node * node) 
+void DoRead(Node * node) 
 {
-
-	return 0;
+	int fd = node->fd;
+	int cnt = Read(fd, node->buf, sizeof(node->buf));
+	if (0 == cnt) {
+		// close
+		EventDel(node);	
+		node = NULL;
+		close(fd);
+	} else {
+		// 读到数据
+		printf("=========读到%d字符, 切换为写\n", cnt);
+		node->bufLen = cnt;
+		node->wIndex = 0;
+		EventMod(node, EPOLLOUT);
+	}
 }
 
-// TODO
-int DoWrite(Node * node)
+void DoWrite(Node * node)
 {
+	int fd = node->fd;
 
-	return 0;
+	int writeCnt = node->bufLen;
+
+#ifdef MAX_WRITE_BYTE
+	// 测试下写多遍,模拟写缓冲不够， 要写多次， 通过事件通知继续写
+	if (writeCnt > MAX_WRITE_BYTE) {
+		writeCnt = MAX_WRITE_BYTE;
+	}
+#endif
+	int cnt = Write(fd, node->buf + node->wIndex, writeCnt);
+	node->bufLen -= cnt;
+	node->wIndex += cnt;
+
+	printf("写了%d字符, 还剩余%d没有写\n", cnt, node->bufLen);
+	if (node->bufLen <= 0) {
+		// 都写光了, 改回读
+		printf("已经写光，切回读\n");
+		EventMod(node, EPOLLIN);
+	}
 }
-
 
 void EventLoop()
 {
