@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#define AF_FAMILY AF_INET  
 
 void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode);
 void PrintAddr(FILE * stream, struct sockaddr_in * addr, const char * headStr);
