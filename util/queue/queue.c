@@ -8,17 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-//#include "queue.h"
-
-#define QUEUE_SUCCESS	1
-#define QUEUE_FAILED	0
-typedef struct queue_t {
-	unsigned int head;
-	unsigned int rear;
-	unsigned int max_size;
-	unsigned int cur_size;
-	void **plist;
-}queue_t;
+#include "queue.h"
 
 int queue_init(struct queue_t * que, unsigned int size)
 {
@@ -53,7 +43,7 @@ int queue_destroy(struct queue_t * que)
 	que->max_size = 0;	
 	que->cur_size = 0;	
 	if (que->plist) {
-		free(que);
+		free(que->plist);
 	}
 	que->plist = NULL;	
 	
