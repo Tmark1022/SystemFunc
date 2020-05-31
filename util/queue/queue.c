@@ -69,7 +69,7 @@ int queue_cur_size(struct queue_t * que)
 	return que->cur_size;
 }
 
-int queue_is_empty(struct queue_t * que)
+int queue_is_not_full(struct queue_t * que)
 {
 	if (NULL == que) {
 		return QUEUE_FAILED;
@@ -78,13 +78,22 @@ int queue_is_empty(struct queue_t * que)
 	return que->cur_size < que->max_size;
 }
 
+int queue_is_empty(struct queue_t * que)
+{
+	if (NULL == que) {
+		return QUEUE_FAILED;
+	}		
+	
+	return que->cur_size <= 0;
+}
+
 int queue_enqueue(struct queue_t * que, const void * ptr)
 {
 	if (NULL == que || NULL == ptr) {
 		return QUEUE_FAILED;
 	}		
 	
-	if (!queue_is_empty(que)) {
+	if (!queue_is_not_full(que)) {
 		return QUEUE_FAILED;		
 	}
 	
@@ -101,7 +110,7 @@ int queue_dequeue(struct queue_t * que, void ** ptr)
 		return QUEUE_FAILED;
 	}		
 	
-	if (que->cur_size <= 0) {
+	if (queue_is_empty(que)) {
 		return QUEUE_FAILED;		
 	}
 	

@@ -24,6 +24,7 @@ int queue_destroy(struct queue_t * que);
 int queue_max_size(struct queue_t * que);
 int queue_cur_size(struct queue_t * que);
 int queue_is_empty(struct queue_t * que);
+int queue_is_not_full(struct queue_t * que);
 
 int queue_enqueue(struct queue_t * que, const void * ptr);
 int queue_dequeue(struct queue_t * que, void ** ptr);
