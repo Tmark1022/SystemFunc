@@ -12,7 +12,7 @@
 #define THREAD_POOL_FAILED	0
 #define THREAD_POOL_SUCCESS	1
 
-#define CTRL_THREAD_RUN_INTERVAL	3
+#define CTRL_THREAD_RUN_INTERVAL	5
 
 typedef struct thread_pool_task_t {
 	void * (*task_handler)(void *);

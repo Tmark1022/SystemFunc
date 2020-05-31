@@ -17,6 +17,11 @@
 #include "thread_pool.h"
 
 /***************************************************
+* declaration 
+***************************************************/
+void * work_thread_handler(void * arg);
+
+/***************************************************
 * 这些函数的实现没有加锁【没有把锁设置成recursive lock】, 使用前请加锁
 ***************************************************/
 int FindTidIdx(thread_pool_t * tp,  pthread_t tid)
@@ -94,13 +99,18 @@ int IsNeedShrink(thread_pool_t * tp)
 /* 缩小策略， 返回变化个数 */
 int ShrinkStrategy(thread_pool_t * tp)
 {
-	int defaultCnt = 5;
-	int canShrinkCnt = tp->cur_thread_cnt - tp->min_thread_cnt;
-	if (canShrinkCnt > defaultCnt) {
-		return defaultCnt; 
-	} else {
-		return canShrinkCnt;
-	}
+	// 最终目标保持忙线程占比大概50%左右
+	int resCnt = tp->act_thread_cnt * 2;
+	if (resCnt < tp->min_thread_cnt) {
+		resCnt = tp->min_thread_cnt;
+	}		
+
+	int diffCnt = tp->cur_thread_cnt - resCnt;
+	if (diffCnt > 0) 
+		return diffCnt;
+	else 
+		return 0;
+
 }
 
 /***************************************************
@@ -118,27 +128,37 @@ void thread_pool_print_error(FILE * stream, int my_errno, const char * headStr, 
 }
 
 
-
-
 /* 控制线程处理函数 */
 void * ctrl_thread_handler(void * arg)
-{
-	// TODO
-	// 监听信号处理shutdown_flag
-	/*
-	 int sigtimedwait(const sigset_t *set, siginfo_t *info,
-                        const struct timespec *timeout);
-			*/
-	//sigaction	
-
-	
+{	
 	thread_pool_t * tp = (thread_pool_t *)arg;
 	if (NULL == tp) {
-		thread_pool_print_error(stderr, EINVAL, "work_thread_handler(argument)", EXIT_FAILURE);
+		thread_pool_print_error(stderr, EINVAL, "ctrl_thread_handler(argument)", EXIT_FAILURE);
 	}	
-	
+
+	sigset_t set;	
+	sigemptyset(&set);
+	sigaddset(&set, SIGQUIT);
+	struct timespec timeout;
+	timeout.tv_nsec = 0;
+	timeout.tv_sec = 0;
 	while (1) {	
 		sleep(CTRL_THREAD_RUN_INTERVAL);
+
+		// 监听信号处理shutdown_flag	
+		int getSigNo = sigtimedwait(&set, NULL, &timeout);
+		if (-1 == getSigNo) {
+			if (errno != EAGAIN) {
+				thread_pool_print_error(stderr, 0, "ctrl_thread_handler(sigtimedwait)", EXIT_FAILURE);
+			}
+		}
+
+		if ( SIGQUIT == getSigNo) {
+			pthread_mutex_lock(&tp->global_lock);
+			tp->shutdown_flag = 1;
+			pthread_mutex_unlock(&tp->global_lock);
+			printf("set shutdown_flag\n");
+		}
 
 		pthread_mutex_lock(&tp->global_lock);
 		if (tp->shutdown_flag && tp->cur_thread_cnt <= 0) {
@@ -150,13 +170,33 @@ void * ctrl_thread_handler(void * arg)
 
 		// 动态调整线程池大小
 		if (!tp->shutdown_flag) {
-			// TODO
 			if (IsNeedExpand(tp)) {
 				// 拓张线程池
+				int expandCnt = ExpandStrategy(tp);
+				if (expandCnt) {
+					printf("try to expand %d cnt thread \n", expandCnt);
+					for (int i = 0; i < expandCnt; ++i) {
+						int unusedIdx = GetUnusedTidIdx(tp);
+						if (-1 == unusedIdx) {
+							thread_pool_print_error(stderr, EINVAL, "ctrl_thread_handler (too much thread?)", 0);
+							continue;
+						}
 
+						int ret = pthread_create(tp->tid_list + unusedIdx, NULL, work_thread_handler, (void *)tp);
+						if (ret) {
+							thread_pool_print_error(stderr, ret, "ctrl_thread_handler error (pthread_create)", EXIT_FAILURE);
+						}	
+						pthread_detach(tp->tid_list[unusedIdx]);
+						++tp->cur_thread_cnt;
+					}
+				}
 			} else if (IsNeedShrink(tp)) {
 				// 缩小线程池
-
+				int shrinkCnt = ShrinkStrategy(tp);
+				if (shrinkCnt > 0) {
+					printf("try to shrink %d cnt thread \n", shrinkCnt);
+					tp->wait_exit_thread_cnt += shrinkCnt;
+				}
 			}	
 		}
 
@@ -175,8 +215,11 @@ void * ctrl_thread_handler(void * arg)
 		pthread_mutex_unlock(&tp->global_lock);		
 	}
 	
+
+	printf("ctrl thread, all done, try to exit\n");	
 	return NULL;
 }
+
 
 /* 工作线程出来了函数 */
 void * work_thread_handler(void * arg)
@@ -192,8 +235,13 @@ void * work_thread_handler(void * arg)
 		while (queue_is_empty(&tp->task_queue) && !tp->shutdown_flag) {
 			// 任务队列空了 且 没shutdown
 			pthread_cond_wait(&tp->queue_not_empty, &tp->global_lock);
+
+			if (tp->shutdown_flag || tp->wait_exit_thread_cnt) {
+				// 跳出检测任务队列循环
+				break;
+			}
 		}	
-			
+
 		if (tp->shutdown_flag || tp->wait_exit_thread_cnt) {
 			// 检测到要关闭线程池 或 有待关闭的线程
 			int idx = FindTidIdx(tp, pthread_self());
@@ -207,11 +255,13 @@ void * work_thread_handler(void * arg)
 				--tp->wait_exit_thread_cnt;
 			}
 			--tp->cur_thread_cnt;
+			
+			printf("tid %lu, idx %d auto exit \n", pthread_self(), idx);
 		
 			pthread_mutex_unlock(&tp->global_lock);
 			break;
 		}
-
+			
 		// 从任务队列获取任务, 设置忙状态
 		thread_pool_task_t * taskp;
 		if (!queue_dequeue(&tp->task_queue, (void **)&taskp)) {
@@ -264,6 +314,7 @@ int thread_pool_init(thread_pool_t * tp, unsigned int min_thread_cnt, unsigned i
 		thread_pool_print_error(stderr, ENOMEM, "thread_pool_init error (queue_init)", EXIT_FAILURE);
 	}
 
+	// 这里模拟通过信号设置shutdown_flag, 这里将主线程设置屏蔽, 后续pthread_create的线程都会继承
 	// 所有线程都屏蔽SIGQUIT, 线程池控制线程使用sigtimedwait 来捕捉SIGQUIT信号
 	sigset_t set;
 	sigemptyset(&set);
@@ -287,6 +338,7 @@ int thread_pool_init(thread_pool_t * tp, unsigned int min_thread_cnt, unsigned i
 	if (ret) {
 		thread_pool_print_error(stderr, ret, "thread_pool_init error (pthread_create)", EXIT_FAILURE);
 	}
+	pthread_detach(tp->ctrl_tid);
 	
 	// 线程池线程
 	int byte_cnt = max_thread_cnt * sizeof(pthread_t);
@@ -301,6 +353,8 @@ int thread_pool_init(thread_pool_t * tp, unsigned int min_thread_cnt, unsigned i
 		if (ret) {
 			thread_pool_print_error(stderr, ret, "thread_pool_init error (pthread_create)", EXIT_FAILURE);
 		}	
+		pthread_detach(tid_list[idx]);
+		++tp->cur_thread_cnt;
 	}	
 	
 	ret = pthread_mutex_unlock(&tp->global_lock);
@@ -325,7 +379,7 @@ int thread_pool_destroy(thread_pool_t * tp)
 void thread_pool_print_struct(FILE * stream, thread_pool_t * tp)
 {
 	// 单纯读和打印， 不用加锁
-	fprintf(stream, "thread_pool_print_struct, task_queue_cnt %d, shutdown_flag %d, min_thread_cnt %d, max_thread_cnt %d, cur_thread_cnt %d, act_thread_cnt %d, wait_exit_thread_cnt %d\n", queue_cur_size(&tp->task_queue), tp->shutdown_flag, tp->min_thread_cnt, tp->max_thread_cnt, tp->cur_thread_cnt, tp->act_thread_cnt, tp->wait_exit_thread_cnt);	
+	fprintf(stream, "\nthread_pool_print_struct ---------------\n task_queue_cnt %d\n shutdown_flag %d\n min_thread_cnt %d\n max_thread_cnt %d\n cur_thread_cnt %d\n act_thread_cnt %d\n wait_exit_thread_cnt %d\n -------------------------------end\n\n", queue_cur_size(&tp->task_queue), tp->shutdown_flag, tp->min_thread_cnt, tp->max_thread_cnt, tp->cur_thread_cnt, tp->act_thread_cnt, tp->wait_exit_thread_cnt);	
 
 	fprintf(stream, "tid_list : ");
 	for (int idx = 0; idx < tp->max_thread_cnt; ++idx) {
@@ -378,6 +432,8 @@ int thread_pool_add_task(thread_pool_t * tp, thread_pool_task_t * task)
 		pthread_mutex_unlock(&tp->global_lock);
 		return THREAD_POOL_FAILED;	
 	}
+
+	printf("add task successfully\n");
 
 	pthread_cond_signal(&tp->queue_not_empty);
 
