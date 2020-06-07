@@ -4,7 +4,7 @@ Res = $(patsubst %.c, %, $(Src))
 all:$(Res)
 
 $(Res):%:%.c
-	gcc $< -o $@  -g
+	gcc $< -o $@  -g -pthread
 
 clean:
 	-rm -rf $(Res) *.g
