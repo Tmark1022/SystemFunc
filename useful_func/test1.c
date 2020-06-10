@@ -13,8 +13,12 @@ int main(int argc, char *argv[]) {
 	char *a = "abc";
 	const char *b = "abc";
 	char const *c = "abc";
-	const * const d  = "abc";
-	printf("%x, %x, %x, %x\n", a, b, c, d);
+	const char * const d  = "abc";
+	const char e[]  = "abc";
+	char f[]  = "abc";
+	char g[]  = "abc";
+
+	printf("%x, %x, %x, %x, %x, %x, %x\n", a, b, c, d, e, f, g);
 
 	return 0;
 }
