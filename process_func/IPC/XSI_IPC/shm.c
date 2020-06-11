@@ -2,7 +2,7 @@
  @ Author	: tmark
  @ Created Time	: Thu 11 Jun 2020 02:53:26 PM CST
  @ File Name	: shm.c
- @ Description	: 
+ @ Description	: 开辟共享内存， 多个无关系进行进行通行（简单生产者消费者）
  ************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
