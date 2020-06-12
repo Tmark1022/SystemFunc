@@ -19,6 +19,14 @@ struct sem_mutex_t {
 	pid_t	lwp;		// kernel tid, linux specific		
 };
 
+struct sem_mutex_t sm;
+
+// 获取tgid, linux specific
+pid_t sys_gettid()
+{	
+	return syscall(SYS_gettid);
+}
+
 void sem_mutex_init(struct sem_mutex_t * sem_mutex)
 {
 	if (NULL == sem_mutex) {
@@ -34,12 +42,12 @@ void sem_mutex_init(struct sem_mutex_t * sem_mutex)
 		perror("sem_init error");	
 		exit(EXIT_FAILURE);
 	}
-
 }
+
 void sem_mutex_destroy(struct sem_mutex_t * sem_mutex)
 {	
 	if (NULL == sem_mutex) {
-		fprintf(stderr, "sem_mutex_init parameter invalid");
+		fprintf(stderr, "sem_mutex_destroy parameter invalid");
 		exit(EXIT_FAILURE);
 	}	
 
@@ -52,33 +60,56 @@ void sem_mutex_destroy(struct sem_mutex_t * sem_mutex)
 
 void sem_mutex_lock(struct sem_mutex_t * sem_mutex)
 {
+	if (NULL == sem_mutex) {
+		fprintf(stderr, "sem_mutex_lock parameter invalid");
+		exit(EXIT_FAILURE);
+	}	
 
-
+	sem_wait(&sem_mutex->sem);	
+	sem_mutex->lwp = sys_gettid();	
 }
 
 void sem_mutex_unlock(struct sem_mutex_t * sem_mutex)
 {
+	if (NULL == sem_mutex) {
+		fprintf(stderr, "sem_mutex_unlock parameter invalid");
+		exit(EXIT_FAILURE);
+	}	
 
+	// 判断当前是否在加锁
+	int val;
+	if (-1 == sem_getvalue(&sem_mutex->sem, &val)) {
+		fprintf(stderr, "sem_mutex_unlock sem_getvalue error");
+		exit(EXIT_FAILURE);	
+	}	
+	if (val > 0) {
+		// 没有加锁， 不能解锁
+		return ;
+	}
+
+	// 判断tgid
+	if (sys_gettid() != sem_mutex->lwp) {
+		return ;
+	}
+
+	sem_post(&sem_mutex->sem);	
+	sem_mutex->lwp = 0;
 }
 
-// 获取tgid, linux specific
-pid_t sys_gettid()
-{	
-	return syscall(SYS_gettid);
-}
 
 void * thread_handler(void *arg) 
 {
-	printf("pid : %d, process tid : %ld, kernel tid : %d\n", getpid(), pthread_self(), sys_gettid());
+	printf("pid : %d, process tid : %ld, kernel tid : %d\n", getpid(), pthread_self(), sys_gettid());	
 	pause();
 	return NULL;
 }
-
 
 #define PRODUCER_CNT	3
 #define CONSUMER_CNT	2
 int main(int argc, char *argv[]) {
 	
+	sem_mutex_init(&sm);
+
 	pthread_t tids[PRODUCER_CNT + CONSUMER_CNT];
 	
 	for(int i = 0; i < PRODUCER_CNT; ++i) {
