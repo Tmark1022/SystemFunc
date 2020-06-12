@@ -12,6 +12,7 @@
 #include <semaphore.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
+#include <time.h>
 
 struct sem_mutex_t {
 	sem_t sem;		// 二进制信号量	
@@ -97,11 +98,36 @@ void sem_mutex_unlock(struct sem_mutex_t * sem_mutex)
 }
 
 
-void * thread_handler(void *arg) 
+void * thread_producer(void *arg) 
 {
-	printf("pid : %d, process tid : %ld, kernel tid : %d\n", getpid(), pthread_self(), sys_gettid());	
-	pause();
+	long tmp = (long)arg;
+	srand(time(NULL));
+	while (1) {
+		sem_mutex_lock(&sm);
+		printf("======= thread %ld, pid : %d,", tmp, getpid());
+		usleep(10);
+		printf(" process tid : %ld, kernel tid : %d =======\n", pthread_self(), sys_gettid());	
+		sem_mutex_unlock(&sm);
+		
+		sleep(rand() % 3);
+	}
+
 	return NULL;
+}
+
+void * thread_consumer(void *arg) 
+{
+	long tmp = (long)arg;
+	srand(time(NULL));
+	while (1) {
+		sem_mutex_lock(&sm);
+		printf("******* thread %ld, pid : %d,", tmp, getpid());
+		usleep(10);
+		printf(" process tid : %ld, kernel tid : %d *******\n", pthread_self(), sys_gettid());	
+		sem_mutex_unlock(&sm);
+		
+		sleep(rand() % 3);
+	}
 }
 
 #define PRODUCER_CNT	3
@@ -113,12 +139,12 @@ int main(int argc, char *argv[]) {
 	pthread_t tids[PRODUCER_CNT + CONSUMER_CNT];
 	
 	for(int i = 0; i < PRODUCER_CNT; ++i) {
-		pthread_create(tids+i, NULL, thread_handler, NULL);
+		pthread_create(tids+i, NULL, thread_producer, (void *)(long)(i+1));
 		pthread_detach(tids[i]);
 	}	
 
 	for(int i = 0; i < CONSUMER_CNT; ++i) {
-		pthread_create(tids+i+PRODUCER_CNT, NULL, thread_handler, NULL);
+		pthread_create(tids+i+PRODUCER_CNT, NULL, thread_consumer, (void *)(long)(i+1));
 		pthread_detach(tids[i]);
 	}	
 
