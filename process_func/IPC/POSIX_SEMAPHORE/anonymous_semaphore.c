@@ -104,8 +104,10 @@ void queue_pop(struct queue_data_t * queue, union data_elem_t  * tmp)
 		fprintf(stderr, "no elem data\n");
 		return ;
 	}
-
-	memcpy(tmp, &(queue->arr[queue->front]), sizeof(union data_elem_t));		
+	
+	if (tmp) {
+		memcpy(tmp, &(queue->arr[queue->front]), sizeof(union data_elem_t));		
+	}
 	queue->front = (queue->front+ 1) % QUEUE_MAX_SIZE; 
 	--queue->size;						
 }
@@ -152,8 +154,6 @@ void HandleOpt(int argc, char * argv[])
 
 int GetShmId()
 {
-#define OFFSET_SEM	(0)
-#define OFFSET_QUEUE	(sizeof(struct sem_pair_t))
 	int size = TOTAL_SIZE; 
 
 	// 先尝试获取， 不存在就创建
