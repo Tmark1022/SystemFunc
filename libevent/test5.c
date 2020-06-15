@@ -69,15 +69,19 @@ void read_cb(struct bufferevent *bev, void *ctx)
 
 	int cfd = bufferevent_getfd(bev);
 	char buf[100];
-	int cnt = bufferevent_read(bev, buf, 100);
-	printf("read %d data from fd %d, total data is %d bytes\n", cnt, cfd, total_cnt);
 
-	// toupper
-	for(int i = 0; i < cnt; ++i)
-		buf[i] = toupper(buf[i]);
+	while (total_cnt > 0) {
+		int cnt = bufferevent_read(bev, buf, 100);
+		printf("read %d data from fd %d, total data is %d bytes\n", cnt, cfd, total_cnt);
+		// toupper
+		for(int i = 0; i < cnt; ++i)
+			buf[i] = toupper(buf[i]);
 
-	if (-1 == bufferevent_write(bev, buf, cnt)) {
-		PrintError(stderr, -1, "read_cb, bufferevent_write error", EXIT_FAILURE);
+		if (-1 == bufferevent_write(bev, buf, cnt)) {
+			PrintError(stderr, -1, "read_cb, bufferevent_write error", EXIT_FAILURE);
+		}
+		
+		total_cnt -= cnt;
 	}
 }
 
