@@ -73,10 +73,9 @@ int main(int argc, char * argv[])
 
 	Listen(fd, SOMAXCONN);
 
-	socklen_t addrlen;
+	socklen_t addrlen = sizeof(struct sockaddr_in);
 	struct sockaddr_in clientAddr;
 	bzero((void *)&clientAddr, sizeof(struct sockaddr_in));
-
 
 	int cfd;
 	pthread_t tid;
