@@ -31,7 +31,10 @@ int main(int argc, char *argv[]) {
 
 	struct sockaddr_in cliAddr;
 	socklen_t len = sizeof(cliAddr);
-	char buf[1024];
+
+	// 需要注意udp会截断数据包， 并丢弃剩余的部分。
+	char buf[50];
+	//char buf[1024];
 
 	while (1) {
 		int cnt = recvfrom(lfd, buf, sizeof(buf), 0, (struct sockaddr *)&cliAddr, &len);
@@ -39,11 +42,13 @@ int main(int argc, char *argv[]) {
 			PrintError(stderr, 0, "call recvfrom failed", EXIT_FAILURE);		
 		}
 		PrintAddr(stdout,  &cliAddr, "new client");
+		printf("recv %d bytes data\n", cnt);
 
 		cnt = sendto(lfd, buf, cnt, 0, (struct sockaddr * )&cliAddr, len);
 		if (-1 == cnt) {
 			PrintError(stderr, 0, "call sendto failed", EXIT_FAILURE);		
 		}
+		printf("send %d bytes data\n", cnt);
 	}
 
 	close(lfd);	
