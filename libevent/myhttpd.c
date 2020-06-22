@@ -52,10 +52,10 @@ void PrintAddr(FILE * stream, struct sockaddr_in * addr, const char * headStr)
 
 void sigint(evutil_socket_t fd, short what, void * arg)
 {	
-	struct timeval t1 = {2, 0};
+	struct timeval t1 = {1, 0};
 	struct event_base * base = (struct event_base *)arg;
 	event_base_loopexit(base, &t1);
-	printf("loop exit after 2 secs\n");
+	printf("loop exit after 1 secs\n");
 }
 
 
@@ -145,10 +145,76 @@ const char * get_file_type(const char * file)
 	}
 }
 
+void send_regular_file(struct http_request_t * req, struct evbuffer *tmpbuf, const char * spath)
+{
+	int fd = open(spath, O_RDONLY);
+	if (-1 == fd) {
+		PrintError(stderr, -1, "open error", EXIT_FAILURE);
+	}
+	
+	char cache[1024]; 
+	int cnt;
+	while ((cnt = read(fd, cache, 1024)) > 0) {	
+		evbuffer_add(tmpbuf, cache, cnt);
+	}
+
+	if (-1 == cnt) {
+		PrintError(stderr, -1, "read error", EXIT_FAILURE);
+	}
+
+	close(fd);
+}
+
+void send_dir(struct http_request_t * req, struct evbuffer *tmpbuf, const char * spath)
+{
+	char cache[1024];	
+	struct dirent ** namelist;
+
+	int ret = scandir(spath, &namelist, NULL, alphasort);	
+	if (ret == -1) {
+		PrintError(stderr, -1, "scandir error", EXIT_FAILURE);
+	}	
+
+	sprintf(cache, "<html><body><head><title>%s</title></head>", req->path);
+	evbuffer_add(tmpbuf, cache, strlen(cache));
+	sprintf(cache, "<h1>now dir : %s</h1><hr><ul>", req->path);
+	evbuffer_add(tmpbuf, cache, strlen(cache));
+
+	for (int idx = 0; idx < ret; ++idx) {
+		if (strcmp(namelist[idx]->d_name, ".") == 0) {
+			sprintf(cache, "<li><a href=\"%s\"><font size=5>%s</font></a></li>", req->path, namelist[idx]->d_name);
+		} else if (strcmp(namelist[idx]->d_name, "..") == 0) {
+			char path_cache[256];	
+			strcpy(path_cache, req->path);
+			char * last = strrchr(path_cache, '/');
+			if (NULL != last && last != path_cache) {
+				// 不是开头的/, 直接砍掉后面的
+				*last = '\0'; 
+			} else {
+				// 就是开头的/, 或者没有匹配到/, 直接根目录	
+				strcpy(path_cache, "/");		
+			}	
+			sprintf(cache, "<li><a href=\"%s\"><font size=5>%s</font></a></li>", path_cache, namelist[idx]->d_name);
+		} else {
+			int len = strlen(req->path);  
+			if (req->path[len - 1] == '/') {
+				// '/'结尾， 不用再连接 /
+				sprintf(cache, "<li><a href=\"%s%s\"><font size=5>%s</font></a></li>", req->path, namelist[idx]->d_name, namelist[idx]->d_name);
+			} else {
+				sprintf(cache, "<li><a href=\"%s/%s\"><font size=5>%s</font></a></li>", req->path, namelist[idx]->d_name, namelist[idx]->d_name);
+			}
+		}
+
+		evbuffer_add(tmpbuf, cache, strlen(cache));
+		free(namelist[idx]);
+	}
+		
+	sprintf(cache, "</ul></body></html>");
+	evbuffer_add(tmpbuf, cache, strlen(cache));
+}
+
 void main_handler(struct http_request_t * req, struct evbuffer *buf)
 {
-	//strncmp	
-	//scandir	
 	if (!req->status) {
 		handler_invalid_request(buf);
 		return ;
@@ -163,9 +229,6 @@ void main_handler(struct http_request_t * req, struct evbuffer *buf)
 		sprintf(spath, "%s", req->path);	
 	}		
 
-	printf("**** file name %s, mine type %s\n", spath, get_file_type(spath));
-
-
 	// 以调用进程的实际用户ID， 而不是有效用户ID， 访问文件， 判断文件是否存在
 	int res = access(spath, F_OK);
 	if (-1 ==res) {
@@ -179,26 +242,25 @@ void main_handler(struct http_request_t * req, struct evbuffer *buf)
 		PrintError(stderr, -1, "call stat error", EXIT_FAILURE);
 	}
 	
-
 	struct evbuffer * tmpbuf = evbuffer_new();
-	evbuffer_add(tmpbuf, "<h1 align=\"center\">hello tmark.</h1>", strlen("<h1 align=\"center\">hello tmark.</h1>"));
 
-
-	// TODO
+	char * appoint_mine_type = NULL;
 	if (statbuf.st_mode & S_IFDIR) {
 		// 目录
-
+		appoint_mine_type = (char *)get_file_type(".html");	
+		send_dir(req, tmpbuf, spath);
 	} else {
 		// 其他文件
+		send_regular_file(req, tmpbuf, spath);
 	}	
 
-
-
-	add_http_header(buf, 200, "OK", get_file_type(spath));
-	evbuffer_add(buf, "<html><body>", strlen("<html><body>"));
-
+	if (appoint_mine_type) {
+		add_http_header(buf, 200, "OK", appoint_mine_type);
+	} else {
+		add_http_header(buf, 200, "OK", get_file_type(spath));
+	}
 	evbuffer_add_buffer(buf, tmpbuf);				
-	evbuffer_add(buf, "</body></html>", strlen("</body></html>"));
+
 	evbuffer_free(tmpbuf);	
 }	
 
