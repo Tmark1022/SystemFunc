@@ -1,8 +1,8 @@
 /*************************************************************************
  @ Author	: tmark
- @ Created Time	: Tue 23 Jun 2020 01:52:33 PM CST
- @ File Name	: aio_sigio.c
- @ Description	: sigio 网络套接字异步IO小demo
+ @ Created Time	: Tue 23 Jun 2020 03:33:02 PM CST
+ @ File Name	: aio_sigio2.c
+ @ Description	: 
  ************************************************************************/
 #include "wrap/wrap.h"
 #include <asm-generic/socket.h>
@@ -23,6 +23,11 @@ void set_aio(int fd);
 
 int lfd;
 int cfd_list[100];
+char * identifier = "none";
+
+// 这两个值会在parent中设置, child_do_flag 设置为1让子进程来处理accept以及后续的客户端通讯
+int child_do_flag = 0;
+int child_pid;
 
 void init_cfd_list()
 {
@@ -49,6 +54,14 @@ int get_unuse_cfd()
 // 需要注意的是， 如果描述符4的数据没有读完， 有新的sigio信号触发（可能是描述符4又写了， 或者其他描述符进行有新的数据来， 因为非阻塞地遍历， 所以描述符4会顺便把剩余的数据读出来）
 void sig_io(int signo) 
 {
+	printf("------------------i am %s, my pid is %d, call sig_io\n", identifier, getpid());	
+
+	if (child_do_flag) {
+		printf("i am %s, my pid is %d, child_do_flag is true, call kill, kill_pid is %d\n", identifier, getpid(), child_pid);
+		kill(child_pid, SIGIO);	
+		return ;
+	}
+
 	// lfd	
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	struct sockaddr_in clientAddr;
@@ -102,10 +115,6 @@ void sig_io(int signo)
 			write(cfd, buf, nread);
 		}
 	}
-	
-
-
-
 }
 
 void set_aio(int fd)
@@ -119,7 +128,6 @@ void set_aio(int fd)
 	}	
 	listenpid = fcntl(fd, F_GETOWN);
 	printf("fd %d, after listen fd F_GETOWN is %d\n", fd, listenpid);
-
 	
 	int flag = fcntl(fd, F_GETFL); 
 	flag |= O_ASYNC;
@@ -154,11 +162,29 @@ int main(int argc, char * argv[])
 	Listen(lfd, SOMAXCONN);
 	signal(SIGIO, sig_io);
 	set_aio(lfd);
-		
-	int cnt = 1;
+	
+	int pid = fork();
+	if (-1 == pid) {
+		// error
+		PrintError(stderr, 0, "call fork failed", EXIT_FAILURE);		
+	} else if (0 == pid) {
+		// child
+		identifier = "child";	
+	} else {
+		// parent
+		identifier = "parent";
+		child_pid = pid;
+
+		// 让子进程来call accept， 那么后续的fd都设置为子进程的pid了
+		child_do_flag = 1;
+	}
+
+	// printf info
+	int listenpid = fcntl(lfd, F_GETOWN);
+	printf("i am %s, my pid is %d, fd %d, before listen fd F_GETOWN is %d\n", identifier, getpid(), lfd, listenpid); 
+
 	while(1) {
-		printf("%d\n", cnt++);
-		sleep(2);
+		pause();
 	}
 	
 	return 0;
