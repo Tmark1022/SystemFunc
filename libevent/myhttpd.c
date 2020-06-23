@@ -26,7 +26,6 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 
-
 void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 {
 
@@ -58,6 +57,91 @@ void sigint(evutil_socket_t fd, short what, void * arg)
 	printf("loop exit after 1 secs\n");
 }
 
+/***************************************************
+* url 编码解码 
+***************************************************/
+// 16进制的字符串转换成10进制的二进制存储方式
+int hex2dec(char c)
+{
+	if ('0' <= c && c <= '9') {
+		return c - '0';
+	} else if ('a' <= c && c <= 'f') {
+		return c - 'a' + 10;
+	} else if ('A' <= c && c <= 'F') {
+		return c - 'A' + 10;
+	} else {
+		return -1;
+	}
+}
+
+// 10机制的二级制存储转换成16进程的字符形式
+char dec2hex(short int c)
+{
+	if (0 <= c && c <= 9) {
+		return c + '0';
+	} else if (10 <= c && c <= 15) {
+		return c + 'A' - 10;
+	} else {
+		return -1;
+	}
+}
+
+
+/*
+ * 编码一个url
+ */
+void urlencode(char url[])
+{
+	int i = 0;
+	int len = strlen(url);
+	int res_len = 0;
+	char res[1024];
+	for (i = 0; i < len; ++i) {
+		char c = url[i];
+		if (('0' <= c && c <= '9') ||
+				('a' <= c && c <= 'z') ||
+				('A' <= c && c <= 'Z') || c == '/' || c == '.') {
+			res[res_len++] = c;
+		} else {
+			int j = (short int)c;
+			if (j < 0)
+				j += 256;
+			int i1, i0;
+			i1 = j / 16;
+			i0 = j - i1 * 16;
+			res[res_len++] = '%';
+			res[res_len++] = dec2hex(i1);
+			res[res_len++] = dec2hex(i0);
+		}
+	}
+	res[res_len] = '\0';
+	strcpy(url, res);
+}
+
+/*
+ * 解码url
+ */
+void urldecode(char url[])
+{
+	int i = 0;
+	int len = strlen(url);
+	int res_len = 0;
+	char res[1024];
+	for (i = 0; i < len; ++i) {
+		char c = url[i];
+		if (c != '%') {
+			res[res_len++] = c;
+		} else {
+			char c1 = url[++i];
+			char c0 = url[++i];
+			int num = 0;
+			num = hex2dec(c1) * 16 + hex2dec(c0);
+			res[res_len++] = num;
+		}
+	}
+	res[res_len] = '\0';
+	strcpy(url, res);
+}
 
 /***************************************************
 * other 
@@ -107,6 +191,10 @@ void parse_request(struct http_request_t * req, struct evbuffer *buf)
 	// 读http request 头, 必定会成功, 不成功就返回错误信息
 	// GET / HTTP/1.1
 	ret = sscanf(tmp, "%s %s %s", req->method, req->path, req->pro);	
+	printf("before decode : %s\n", req->path);
+	urldecode(req->path);
+	printf("after decode : %s\n", req->path);
+
 	if (3 != ret) {
 		PrintError(stderr, -1, "sscanf error", 0);
 		req->status = 0;
@@ -123,11 +211,11 @@ const char * get_file_type(const char * file)
 	
 	// 没有找到
 	if (NULL == dot) {
-		return "text/plain";	
+		return "text/plain; charset=utf-8";	
 	}
 	
 	if (strcmp(dot, ".html") == 0) {
-		return "text/html";	
+		return "text/html; charset=utf-8";	
 	} else if (strcmp(dot, ".jpg") == 0) {	
 		return "image/jpeg";	
 	} else if (strcmp(dot, ".png") == 0) {	
@@ -141,7 +229,7 @@ const char * get_file_type(const char * file)
 	} else if (strcmp(dot, ".ico") == 0) {	
 		return "image/x-icon";	
 	} else { 
-		return "text/plain";	
+		return "text/plain; charset=utf-8";	
 	}
 }
 
@@ -177,12 +265,15 @@ void send_dir(struct http_request_t * req, struct evbuffer *tmpbuf, const char *
 
 	sprintf(cache, "<html><body><head><title>%s</title></head>", req->path);
 	evbuffer_add(tmpbuf, cache, strlen(cache));
-	sprintf(cache, "<h1>now dir : %s</h1><hr><ul>", req->path);
+	sprintf(cache, "<h1>now dir : %s</h1><hr><table>", req->path);
 	evbuffer_add(tmpbuf, cache, strlen(cache));
 
 	for (int idx = 0; idx < ret; ++idx) {
+		sprintf(cache, "<tr>\n");
+		evbuffer_add(tmpbuf, cache, strlen(cache));
+
 		if (strcmp(namelist[idx]->d_name, ".") == 0) {
-			sprintf(cache, "<li><a href=\"%s\"><font size=5>%s</font></a></li>", req->path, namelist[idx]->d_name);
+			sprintf(cache, "<td><a href=\"%s\"><font size=5>%s</font></a></td>\n", req->path, namelist[idx]->d_name);
 		} else if (strcmp(namelist[idx]->d_name, "..") == 0) {
 			char path_cache[256];	
 			strcpy(path_cache, req->path);
@@ -194,22 +285,38 @@ void send_dir(struct http_request_t * req, struct evbuffer *tmpbuf, const char *
 				// 就是开头的/, 或者没有匹配到/, 直接根目录	
 				strcpy(path_cache, "/");		
 			}	
-			sprintf(cache, "<li><a href=\"%s\"><font size=5>%s</font></a></li>", path_cache, namelist[idx]->d_name);
+			sprintf(cache, "<td><a href=\"%s\"><font size=5>%s</font></a></td>\n", path_cache, namelist[idx]->d_name);
 		} else {
+			// 文件size大小
 			int len = strlen(req->path);  
+			char file_path[1024];
+			if (req->path[len - 1] == '/') {
+				sprintf(file_path, "%s%s", spath, namelist[idx]->d_name);
+			} else {
+				sprintf(file_path, "%s/%s", spath, namelist[idx]->d_name);
+			}
+
+			struct stat statbuf;
+			if (-1 == stat(file_path, &statbuf)) {
+				PrintError(stderr, -1, "call stat error", EXIT_FAILURE);
+			}
+
 			if (req->path[len - 1] == '/') {
 				// '/'结尾， 不用再连接 /
-				sprintf(cache, "<li><a href=\"%s%s\"><font size=5>%s</font></a></li>", req->path, namelist[idx]->d_name, namelist[idx]->d_name);
+				sprintf(cache, "<td><a href=\"%s%s\"><font size=5>%s</font></a></td><td><font size=5>%ld</font></td>\n", req->path, namelist[idx]->d_name, namelist[idx]->d_name, statbuf.st_size);
 			} else {
-				sprintf(cache, "<li><a href=\"%s/%s\"><font size=5>%s</font></a></li>", req->path, namelist[idx]->d_name, namelist[idx]->d_name);
+				sprintf(cache, "<td><a href=\"%s/%s\"><font size=5>%s</font></a></td><td><font size=5>%ld</font></td>\n", req->path, namelist[idx]->d_name, namelist[idx]->d_name, statbuf.st_size);
 			}
 		}
 
 		evbuffer_add(tmpbuf, cache, strlen(cache));
 		free(namelist[idx]);
+
+		sprintf(cache, "</tr>\n");
+		evbuffer_add(tmpbuf, cache, strlen(cache));
 	}
 		
-	sprintf(cache, "</ul></body></html>");
+	sprintf(cache, "</table></body></html>");
 	evbuffer_add(tmpbuf, cache, strlen(cache));
 }
 
