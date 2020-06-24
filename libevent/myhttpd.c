@@ -235,7 +235,8 @@ const char * get_file_type(const char * file)
 
 void send_regular_file(struct http_request_t * req, struct evbuffer *tmpbuf, const char * spath)
 {
-	int fd = open(spath, O_RDONLY);
+	// 非阻塞方式打开, 不然打开fifo就会阻塞死了
+	int fd = open(spath, O_RDONLY | O_NONBLOCK);
 	if (-1 == fd) {
 		PrintError(stderr, -1, "open error", EXIT_FAILURE);
 	}
