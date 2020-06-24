@@ -17,7 +17,7 @@
 #define DAEMON_PID_PATH "/var/run/"
 
 void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode);
-void Daemonize(const char * cmd);
+void Daemonize(const char * cmd, int facility);
 void SingletonDaemon(const char * cmd);
 
 

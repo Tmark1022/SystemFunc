@@ -22,7 +22,7 @@ void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 	}
 }
 
-void Daemonize(const char * cmd)
+void Daemonize(const char * cmd, int facility)
 {
 	// 1. clear umask mode
 	umask(0);
@@ -79,7 +79,7 @@ void Daemonize(const char * cmd)
 	}
 
 	// 6. 重定向0,1,2 /dev/null 使调用标准io失效
-	openlog(cmd, LOG_PID, LOG_USER);
+	openlog(cmd, LOG_PID, facility);
 	int fd0 = open("/dev/null", O_RDONLY);
 	int fd1 = dup(fd0);
 	int fd2 = dup(fd0);

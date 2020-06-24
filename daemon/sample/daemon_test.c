@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/syslog.h>
 #include <unistd.h>
 #include <daemon.h>
 
@@ -25,7 +26,7 @@ int main(int argc, char *argv[]) {
 		++cmd;
 	}
 
-	Daemonize(cmd);
+	Daemonize(cmd, LOG_USER);
 	SingletonDaemon(cmd);
 
 	pause();
