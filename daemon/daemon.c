@@ -13,10 +13,15 @@
 
 void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 {
+
+#if (-1 == my_errno)
+	fprintf(stream, "%s\n", headStr);	
+#else 
 	if (!my_errno) {
 		my_errno = errno;
 	}	
 	fprintf(stream, "%s : %s\n", headStr, strerror(my_errno));	
+#endif
 	if (exitCode) {
 		exit(exitCode);	
 	}
