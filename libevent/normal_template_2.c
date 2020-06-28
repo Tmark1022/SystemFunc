@@ -52,17 +52,22 @@ void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 // 处理main传参, 有需要自定义
 void HandleOpt(int argc, char * argv[]) 
 {
-	/*
-	int opt, tmp;
-	while ((opt = getopt(argc, argv, "mhp:i:k:")) != -1) {
+	int opt;
+	while ((opt = getopt(argc, argv, "h:p:")) != -1) {
 		switch (opt) {
-
+			case 'h':
+				ip_addr = optarg; 
+				break;
+			case 'p':
+				port = atoi(optarg);
+				break;	
                		default: 
-               		    fprintf(stderr, "Usage: %s \n", argv[0]);
+               		    fprintf(stderr, "Usage: %s [-h ip][-p port]\n", argv[0]);
                		    exit(EXIT_FAILURE);
                	}
 	}
-
+	
+	/*
 	if (optind >= argc) {
 		fprintf(stderr, "need more argument\n");
 		exit(EXIT_FAILURE);
