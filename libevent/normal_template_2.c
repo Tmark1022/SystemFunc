@@ -4,6 +4,7 @@
  @ File Name	: normal_template_2.c
  @ Description	: libevent基本模板2
  ************************************************************************/
+#include <asm-generic/errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -131,7 +132,11 @@ void event_cb(struct bufferevent *bev, short what, void *ctx)
 	} else if (BEV_EVENT_TIMEOUT& what) {
 
 	} else {
-		PrintError(stderr, -1, "event_cb, some errors happen", EXIT_FAILURE);
+		printf("errno is %d, errno string is %s\n", errno, strerror(errno));
+		if (errno != ECONNRESET) {
+			// 服务器支持TCP RST 连接
+			PrintError(stderr, 0, "event_cb, some errors happen", EXIT_FAILURE);
+		}
 	}
 }
 
