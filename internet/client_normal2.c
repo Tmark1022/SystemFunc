@@ -16,8 +16,12 @@ void sig_int(int signo)
 {
 	// TODO
 	// shundown 关闭写端后尝试写write时， 居然直接把进程给kill掉了， 连返回都没有， 也不产生core dump 文件， 测试环境ubuntu 18.04, 内核 linux 4.15.0-101-generic 
+	// 抓包发现调用shutdown, 并制定SHUT_WR时就像是调用了close一样【走了4次挥手过程】，（跟书上说的并不是书上说的半关闭一样） 
+	
+	//当使用SHUT_RD时， 根本没有发送任何tcp报文通知服务器， 觉得仅仅是应用层自己的限制， 不再读的， 所以设置了SHUT_RD后第一次读返回值是0
 	printf("get sig_int, do shutdown\n");	
-	if (-1 == shutdown(sockfd, SHUT_RDWR)) {
+	//if (-1 == shutdown(sockfd, SHUT_WR)) {
+	if (-1 == shutdown(sockfd, SHUT_RD)) {
 		perror("shutdown failed");	
 		exit(EXIT_FAILURE);
 	}
@@ -34,7 +38,20 @@ int main(int argc, char *argv[]) {
 	struct sockaddr_in serverSockAddr;
 	serverSockAddr.sin_family = AF_INET;
 	serverSockAddr.sin_port = htons(8888);
-	inet_pton(AF_INET, "127.0.0.1", &serverSockAddr.sin_addr);
+	
+	if (argc > 1) {
+		struct in_addr tmpAddr; 
+		int ret  = inet_pton(AF_INET, argv[1], &tmpAddr);
+		if (-1 == ret) {
+			PrintError(stderr, 0, "inet_pton error", EXIT_FAILURE);				
+		} else if (0 == ret) {
+			PrintError(stderr, 0, "inet_pton error, invalid ip", EXIT_FAILURE);				
+		}	
+		serverSockAddr.sin_addr.s_addr = tmpAddr.s_addr;
+	} else {
+		inet_pton(AF_INET, "127.0.0.1", &serverSockAddr.sin_addr);
+	}
+
 	Connect(sockfd, (const struct sockaddr *)&serverSockAddr, sizeof(struct sockaddr_in));
 
 	struct sockaddr_in addrtmp;
