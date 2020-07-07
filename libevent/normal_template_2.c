@@ -30,6 +30,7 @@
 ***************************************************/
 int port = 8888;
 char * ip_addr = "0.0.0.0";
+unsigned int tcp_send_buf = 0, tcp_recv_buf= 0;
 
 /***************************************************
 * other 
@@ -54,7 +55,7 @@ void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 void HandleOpt(int argc, char * argv[]) 
 {
 	int opt;
-	while ((opt = getopt(argc, argv, "h:p:")) != -1) {
+	while ((opt = getopt(argc, argv, "h:p:S:R:")) != -1) {
 		switch (opt) {
 			case 'h':
 				ip_addr = optarg; 
@@ -62,6 +63,12 @@ void HandleOpt(int argc, char * argv[])
 			case 'p':
 				port = atoi(optarg);
 				break;	
+			case 'S':
+				tcp_send_buf = atoi(optarg);	
+				break;
+			case 'R':
+				tcp_recv_buf = atoi(optarg);	
+				break;
                		default: 
                		    fprintf(stderr, "Usage: %s [-h ip][-p port]\n", argv[0]);
                		    exit(EXIT_FAILURE);
@@ -81,6 +88,38 @@ void PrintAddr(FILE * stream, struct sockaddr_in * addr, const char * headStr)
 	char arr[INET_ADDRSTRLEN];	
 	inet_ntop(AF_INET, &(addr->sin_addr), arr, sizeof(arr)); 
 	fprintf(stream, "%s, %s:%d\n", headStr, arr, ntohs(addr->sin_port));	
+}
+
+void set_socket_buf_value(int fd) 
+{
+	socklen_t recv_len, send_len; 
+	recv_len = send_len = sizeof(int);
+	if (tcp_recv_buf > 0) {
+		if (-1 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &tcp_recv_buf, recv_len)) {
+			PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
+		}
+	}
+	
+	if (tcp_send_buf > 0) {
+		if (-1 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &tcp_send_buf, send_len)) {
+			PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
+		}
+	}	
+}
+
+void print_socket_buf_value(int fd) 
+{
+	int recv_value, send_value;
+	socklen_t recv_len, send_len; 
+	recv_len = send_len = sizeof(int);
+	if (-1 == getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &recv_value, &recv_len)) {
+		PrintError(stderr, 0, "call getsockopt failed", EXIT_FAILURE);		
+	}
+	if (-1 == getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &send_value, &send_len)) {
+		PrintError(stderr, 0, "call getsockopt failed", EXIT_FAILURE);		
+	}
+	
+	printf("fd (%d), send buf is %d, recv buf is %d\n", fd, send_value, recv_value);
 }
 
 void sigint(evutil_socket_t fd, short what, void * arg)
@@ -136,6 +175,9 @@ void event_cb(struct bufferevent *bev, short what, void *ctx)
 		if (errno != ECONNRESET) {
 			// 服务器支持TCP RST 连接
 			PrintError(stderr, 0, "event_cb, some errors happen", EXIT_FAILURE);
+		} else {
+			// RST 要close一下, 避免一直占用服务器的文件描述符
+			bufferevent_free(bev);
 		}
 	}
 }
@@ -144,7 +186,11 @@ void connect_call_back(struct evconnlistener * evlistener, evutil_socket_t cfd, 
 {
 	const char * aa = (const char *)arg;
 	PrintAddr(stdout, (struct sockaddr_in *)cli_addr, aa);
-	
+
+	// 设置发送和接收缓冲buf
+	set_socket_buf_value(cfd);
+	print_socket_buf_value(cfd);
+
 	// 添加读写bufferevent
 	struct event_base * base = evconnlistener_get_base(evlistener);	
 	struct bufferevent * bev = bufferevent_socket_new(base, cfd, BEV_OPT_CLOSE_ON_FREE);
