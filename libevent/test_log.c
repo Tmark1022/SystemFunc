@@ -200,6 +200,7 @@ void log_cb(int severity, const char *msg) {
 	fclose(fp);
 }
 
+
 int main(int argc, char *argv[]) {		
 	HandleOpt(argc, argv);
 	
