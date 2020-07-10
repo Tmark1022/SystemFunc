@@ -31,6 +31,7 @@
 int port = 8888;
 char * ip_addr = "0.0.0.0";
 unsigned int tcp_send_buf = 0, tcp_recv_buf= 0;
+int keepalive = 0;
 
 /***************************************************
 * other 
@@ -55,7 +56,7 @@ void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 void HandleOpt(int argc, char * argv[]) 
 {
 	int opt;
-	while ((opt = getopt(argc, argv, "h:p:S:R:")) != -1) {
+	while ((opt = getopt(argc, argv, "h:p:S:R:K")) != -1) {
 		switch (opt) {
 			case 'h':
 				ip_addr = optarg; 
@@ -69,8 +70,10 @@ void HandleOpt(int argc, char * argv[])
 			case 'R':
 				tcp_recv_buf = atoi(optarg);	
 				break;
+			case 'K':
+				keepalive = 1;
                		default: 
-               		    fprintf(stderr, "Usage: %s [-h ip][-p port]\n", argv[0]);
+               		    fprintf(stderr, "Usage: %s [-h ip][-p port][-S send_buff][-R recv_buff][-K]\n", argv[0]);
                		    exit(EXIT_FAILURE);
                	}
 	}
@@ -105,6 +108,15 @@ void set_socket_buf_value(int fd)
 			PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
 		}
 	}	
+}
+
+void set_socket_keep_alive(int fd)
+{
+	int flags =1;
+	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&flags, sizeof(flags))) { 
+		perror("ERROR: setsocketopt(), SO_KEEPALIVE"); 
+		exit(0); 
+	}
 }
 
 void print_socket_buf_value(int fd) 
@@ -190,6 +202,11 @@ void connect_call_back(struct evconnlistener * evlistener, evutil_socket_t cfd, 
 	// 设置发送和接收缓冲buf
 	set_socket_buf_value(cfd);
 	print_socket_buf_value(cfd);
+
+	// set keep alive timer 
+	if (keepalive) {
+		set_socket_keep_alive(cfd);
+	}
 
 	// 添加读写bufferevent
 	struct event_base * base = evconnlistener_get_base(evlistener);	
