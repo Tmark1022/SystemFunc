@@ -72,6 +72,7 @@ void HandleOpt(int argc, char * argv[])
 				break;
 			case 'K':
 				keepalive = 1;
+				break;
                		default: 
                		    fprintf(stderr, "Usage: %s [-h ip][-p port][-S send_buff][-R recv_buff][-K]\n", argv[0]);
                		    exit(EXIT_FAILURE);
