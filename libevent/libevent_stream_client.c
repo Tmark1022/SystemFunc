@@ -41,6 +41,7 @@ int do_linger = 0;
 
 struct bufferevent * gbev = NULL;
 
+unsigned int tcp_send_buf = 0, tcp_recv_buf= 0;
 /***************************************************
 * other 
 ***************************************************/
@@ -64,7 +65,7 @@ void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 void HandleOpt(int argc, char * argv[]) 
 {
 	int opt;
-	while ((opt = getopt(argc, argv, "h:p:s:b:ALv")) != -1) {
+	while ((opt = getopt(argc, argv, "h:p:s:b:ALvS:R:")) != -1) {
 		switch (opt) {
 			case 'h':
 				ip_addr = optarg; 
@@ -84,6 +85,14 @@ void HandleOpt(int argc, char * argv[])
 			case 'L':
 				do_linger = 1;
 				break;
+
+			case 'S':
+				tcp_send_buf = atoi(optarg);	
+				break;
+			case 'R':
+				tcp_recv_buf = atoi(optarg);	
+				break;
+
 			case 'v':
                		    fprintf(stdout, "Usage: %s [-h ip][-p port][-s src_addr][-b src_port][-A][-L]\n", argv[0]);
                		    exit(EXIT_SUCCESS);
@@ -236,6 +245,39 @@ void * do_read_stdin(void * arg)
 	return NULL;
 }
 
+void set_socket_buf_value(int fd) 
+{
+	socklen_t recv_len, send_len; 
+	recv_len = send_len = sizeof(int);
+	if (tcp_recv_buf > 0) {
+		if (-1 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &tcp_recv_buf, recv_len)) {
+			PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
+		}
+	}
+	
+	if (tcp_send_buf > 0) {
+		if (-1 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &tcp_send_buf, send_len)) {
+			PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
+		}
+	}	
+}
+
+void print_socket_buf_value(int fd) 
+{
+	int recv_value, send_value;
+	socklen_t recv_len, send_len; 
+	recv_len = send_len = sizeof(int);
+	if (-1 == getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &recv_value, &recv_len)) {
+		PrintError(stderr, 0, "call getsockopt failed", EXIT_FAILURE);		
+	}
+	if (-1 == getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &send_value, &send_len)) {
+		PrintError(stderr, 0, "call getsockopt failed", EXIT_FAILURE);		
+	}
+	
+	printf("fd (%d), send buf is %d, recv buf is %d\n", fd, send_value, recv_value);
+}
+
+
 int main(int argc, char *argv[]) {		
 	HandleOpt(argc, argv);
 
@@ -244,6 +286,9 @@ int main(int argc, char *argv[]) {
 	event_add(sigEv, NULL);
 
 	int sockfd = DoConnect();
+
+	set_socket_buf_value(sockfd);
+	print_socket_buf_value(sockfd);
 
 	gbev = bufferevent_socket_new(base, sockfd, BEV_OPT_CLOSE_ON_FREE);
 	if (NULL == gbev) {

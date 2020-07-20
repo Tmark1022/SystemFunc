@@ -118,6 +118,8 @@ void set_socket_keep_alive(int fd)
 		perror("ERROR: setsocketopt(), SO_KEEPALIVE"); 
 		exit(0); 
 	}
+
+	printf("fd %d KEEP ALIVE\n", fd);
 }
 
 void print_socket_buf_value(int fd) 
