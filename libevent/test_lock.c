@@ -26,6 +26,8 @@
 
 #include <event2/thread.h>
 
+void TestDumpEvent(struct event_base *base);
+void Testforeach(struct event_base *base);
 /***************************************************
 * global variable, marco 
 ***************************************************/
@@ -116,6 +118,11 @@ void read_cb(struct bufferevent *bev, void *ctx)
 
 	evbuffer_free(readbuf);
 	evbuffer_free(writebuf);	
+
+
+	struct event_base * base = bufferevent_get_base(bev);
+	TestDumpEvent(base);
+	Testforeach(base);
 }
 
 void write_cb(struct bufferevent *bev, void *ctx)
@@ -199,6 +206,22 @@ void TestVersion()
 {
 	printf("compiler version : %s, %x\n", LIBEVENT_VERSION, LIBEVENT_VERSION_NUMBER);
 	printf("run time version : %s, %x\n", event_get_version(), event_get_version_number());
+}
+
+void TestDumpEvent(struct event_base *base)
+{
+	event_base_dump_events(base, stderr);
+}
+
+int traversal_event(const struct event_base * base,const struct event * ev, void * arg)
+{	
+	printf("ev %ld, %s\n", (long)ev, (char *)arg); 
+	return 0;
+}
+
+void Testforeach(struct event_base *base)
+{
+	event_base_foreach_event(base,traversal_event, "hello tmark");
 }
  
 int main(int argc, char *argv[]) {		
