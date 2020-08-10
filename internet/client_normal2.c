@@ -80,6 +80,8 @@ int main(int argc, char *argv[]) {
 		if (-1 == ret) {
 			perror("read error");
 			exit(EXIT_FAILURE);
+		} else if (ret == 0) {
+			exit(1);
 		}	
 		printf("ret is %d\n", ret);
 
