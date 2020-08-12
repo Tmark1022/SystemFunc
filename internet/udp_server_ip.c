@@ -12,27 +12,64 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include "wrap/wrap.h"
+/***************************************************
+* global variable, marco 
+***************************************************/
+char * ip_addr = "127.0.0.1";
+int reuse_addr = 0;
+
+/***************************************************
+* other 
+***************************************************/
+void HandleOpt(int argc, char * argv[]) 
+{
+	int opt;
+	while ((opt = getopt(argc, argv, "h:vR")) != -1) {
+		switch (opt) {
+			case 'h':
+				ip_addr = optarg; 
+				break;
+			case 'v':
+               		    fprintf(stdout, "Usage: %s [-h ip][-p port]\n", argv[0]);
+               		    exit(EXIT_SUCCESS);
+			case 'R':
+				reuse_addr = 1;
+				break;	
+               		default: 
+               		    fprintf(stderr, "Usage: %s [-h ip][-p port]\n", argv[0]);
+               		    exit(EXIT_FAILURE);
+               	}
+	}
+	
+	/*
+	if (optind >= argc) {
+		fprintf(stderr, "need more argument\n");
+		exit(EXIT_FAILURE);
+	}
+	*/
+}
 
 
 int main(int argc, char *argv[]) {
 
-	if(argc != 2) {		
-		PrintError(stderr, EINVAL, "miss IP", EXIT_FAILURE);			
-	}
+	HandleOpt(argc, argv);
 	
 	int lfd = Socket(AF_INET, SOCK_DGRAM, 0);
 
-	// 端口复用
-	int opt = 1;
-	if (-1 == setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-		PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
+
+	if (reuse_addr) {
+		// 端口复用 (对于udp， SO_REUSEADDR 能重复绑定完全相同的ip和port对, 参考unp 7.5.11)
+		int opt = 1;
+		if (-1 == setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+			PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
+		}
 	}
 
 	struct sockaddr_in svrAddr;
 	svrAddr.sin_family = AF_INET;
 	svrAddr.sin_port = htons(8888);
 	struct in_addr tmpAddr; 
-	int ret  = inet_pton(AF_INET, argv[1], &tmpAddr);
+	int ret  = inet_pton(AF_INET, ip_addr, &tmpAddr);
 	if (-1 == ret) {
 		PrintError(stderr, 0, "inet_pton error", EXIT_FAILURE);				
 	} else if (0 == ret) {
@@ -55,13 +92,13 @@ int main(int argc, char *argv[]) {
 			PrintError(stderr, 0, "call recvfrom failed", EXIT_FAILURE);		
 		}
 		PrintAddr(stdout,  &cliAddr, "new client");
-		printf("i am %s, recv %d bytes data\n", argv[1], cnt);
+		printf("i am %s, recv %d bytes data\n", ip_addr, cnt);
 
 		cnt = sendto(lfd, buf, cnt, 0, (struct sockaddr * )&cliAddr, len);
 		if (-1 == cnt) {
 			PrintError(stderr, 0, "call sendto failed", EXIT_FAILURE);		
 		}
-		printf("i am %s, send %d bytes data\n", argv[1], cnt);
+		printf("i am %s, send %d bytes data\n", ip_addr, cnt);
 	}
 
 	close(lfd);	
