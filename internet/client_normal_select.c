@@ -128,10 +128,16 @@ int  do_connect()
 	
 	if (bind_ip_addr != NULL && port != 0) {
 		struct sockaddr_in bindAddr = construct_sockaddr_in(bind_ip_addr, bind_port);
-		bind(sockfd, (struct sockaddr *)&bindAddr, sizeof(struct sockaddr_in));
+		if (-1 == bind(sockfd, (struct sockaddr *)&bindAddr, sizeof(struct sockaddr_in))) {
+			perror("bind error");	
+			exit(1);
+		}
 	}	
 
-	connect(sockfd, (const struct sockaddr *)&svrAddr, sizeof(struct sockaddr_in));
+	if (-1 == connect(sockfd, (const struct sockaddr *)&svrAddr, sizeof(struct sockaddr_in))) {
+			perror("connect  error");	
+			exit(1);	
+	}
 
 	return sockfd;
 }
