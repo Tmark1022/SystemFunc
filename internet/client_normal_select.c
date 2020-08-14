@@ -4,6 +4,9 @@
  @ File Name	: client_normal_select.c
  @ Description	: 
  ************************************************************************/
+#include <asm-generic/errno-base.h>
+#include <asm-generic/errno.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +18,8 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <math.h>
+#include <fcntl.h>
+#include <netinet/tcp.h>
 
 /***************************************************
 * global variable, marco 
@@ -29,6 +34,9 @@ int bind_port = 0;
 char * bind_ip_addr = NULL;
 
 int reuse_addr = 0;
+
+int source_socket = 0; 
+unsigned int tcp_send_buf = 0, tcp_recv_buf= 0;
 
 /***************************************************
 * other 
@@ -52,7 +60,7 @@ void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 void HandleOpt(int argc, char * argv[]) 
 {
 	int opt;
-	while ((opt = getopt(argc, argv, "h:p:s:b:vR")) != -1) {
+	while ((opt = getopt(argc, argv, "h:p:s:b:vriR:S:")) != -1) {
 		switch (opt) {
 			case 'h':
 				ip_addr = optarg; 
@@ -69,9 +77,18 @@ void HandleOpt(int argc, char * argv[])
 			case 'v':
                		    fprintf(stdout, "Usage: %s [-h ip][-p port][-s src_addr][-b src_port]\n", argv[0]);
                		    exit(EXIT_SUCCESS);
-			case 'R':
+			case 'r':
 				reuse_addr = 1;
 				break;	
+			case 'i':
+				source_socket = 1;
+				break;
+			case 'S':
+				tcp_send_buf = atoi(optarg);	
+				break;
+			case 'R':
+				tcp_recv_buf = atoi(optarg);	
+				break;
                		default: 
                		    fprintf(stderr, "Usage: %s [-h ip][-p port][-s src_addr][-b src_port]\n", argv[0]);
                		    exit(EXIT_FAILURE);
@@ -86,6 +103,48 @@ void HandleOpt(int argc, char * argv[])
 	*/
 }
 
+
+void set_socket_buf_value(int fd) 
+{
+	socklen_t recv_len, send_len; 
+	recv_len = send_len = sizeof(int);
+	if (tcp_recv_buf > 0) {
+		if (-1 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &tcp_recv_buf, recv_len)) {
+			PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
+		}
+	}
+	
+	if (tcp_send_buf > 0) {
+		if (-1 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &tcp_send_buf, send_len)) {
+			PrintError(stderr, 0, "call setsockopt failed", EXIT_FAILURE);		
+		}
+	}	
+}
+
+void print_socket_buf_value(int fd) 
+{
+	int recv_value, send_value;
+	socklen_t recv_len, send_len; 
+	recv_len = send_len = sizeof(int);
+	if (-1 == getsockopt(fd, SOL_SOCKET, SO_RCVBUF, &recv_value, &recv_len)) {
+		PrintError(stderr, 0, "call getsockopt failed", EXIT_FAILURE);		
+	}
+	if (-1 == getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &send_value, &send_len)) {
+		PrintError(stderr, 0, "call getsockopt failed", EXIT_FAILURE);		
+	}
+	
+	printf("fd (%d), send buf is %d, recv buf is %d\n", fd, send_value, recv_value);
+}
+
+void print_socket_tcp_mss_value(int fd) 
+{
+	int mss;
+	socklen_t len;
+	if (-1 == getsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, &mss, &len)) {
+		PrintError(stderr, 0, "call getsockopt failed", EXIT_FAILURE);		
+	}	
+	printf("fd (%d), mss is %d\n", fd, mss);
+}
 
 
 struct sockaddr_in  construct_sockaddr_in(const char * addr, int p)
@@ -126,6 +185,12 @@ int  do_connect()
 		}
 	}
 	
+	// 连接前
+	set_socket_buf_value(sockfd);
+	print_socket_buf_value(sockfd);
+	print_socket_tcp_mss_value(sockfd);
+
+	
 	if (bind_ip_addr != NULL && port != 0) {
 		struct sockaddr_in bindAddr = construct_sockaddr_in(bind_ip_addr, bind_port);
 		if (-1 == bind(sockfd, (struct sockaddr *)&bindAddr, sizeof(struct sockaddr_in))) {
@@ -138,6 +203,10 @@ int  do_connect()
 			perror("connect  error");	
 			exit(1);	
 	}
+	
+	// 连接后
+	print_socket_buf_value(sockfd);
+	print_socket_tcp_mss_value(sockfd);
 
 	return sockfd;
 }
@@ -202,22 +271,48 @@ void str_cli(FILE *fp, int cfd)
 		}
 
 	}
-	
-
-
-
-	
-
-
-
 }
 
+void source_socket_handler(int cfd) 
+{
+	char source_buf[1024];
+	for(int i = 0; i < 1024; ++i) {
+		source_buf[i] = '1';
+	}
+	int cnt = 1000;	
+	int interval = 100000;
 
+	// 设置非阻塞
+	int flag = fcntl(cfd, F_GETFL);
+	flag |=  O_NONBLOCK;
+	fcntl(cfd, F_SETFL, flag);	
+
+	while (1) {		
+		int ret = write(cfd, source_buf, cnt);
+		if (-1 == ret) {
+			if (EAGAIN == errno || EWOULDBLOCK == errno) {
+				printf("write block\n");	
+			} else {
+				perror("write error");
+				exit(1);
+			}
+		}
+
+		printf("write cnt : %d, suc : %d\n", cnt, ret);
+		usleep(interval);	
+	}	
+}
 
 int main(int argc, char *argv[]) {
 	HandleOpt(argc, argv);
 	int cfd = do_connect();	
-	str_cli(stdin, cfd);
+	
+	if (source_socket)  {
+		source_socket_handler(cfd);
+	} else {
+		str_cli(stdin, cfd);
+	}
+
 	close(cfd);
 	return 0;
 }
