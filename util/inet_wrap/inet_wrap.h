@@ -19,16 +19,18 @@
 #define MAX_BUF_SIZE 1024
 #define MAX_LINE_SIZE 1024
 #define max(a,b) (a) > (b) ? (a) : (b)
-
+#define	SA	struct sockaddr
+#define	SS	struct sockaddr_storage
 
 /***************************************************
 * generic  
 ***************************************************/
 void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode);
-void PrintAddr(FILE * stream, struct sockaddr_in * addr, const char * headStr);
+void PrintAddr(FILE * stream, SA * addr, const char * headStr);
 void FcntlAddFlag(int fd, int flag);
 void SetNonBlocking(int fd);
 void SockAddrToHumanStr(struct sockaddr * addr, socklen_t addrlen, char * host, socklen_t hostlen, char *port, socklen_t portlen);
+void * Malloc(size_t size);
 
 char *
 Sock_ntop_host(const struct sockaddr *sa, socklen_t salen);
@@ -58,7 +60,16 @@ ssize_t WriteCount(int fd, const void *buf, size_t count);
 ***************************************************/
 struct addrinfo *
 Host_serv(const char *host, const char *serv, int family, int socktype);
-
+int
+Tcp_connect(const char *host, const char *serv);
+int
+Tcp_listen(const char *host, const char *serv, socklen_t *addrlenp);
+int
+Udp_client(const char *host, const char *serv, SA **saptr, socklen_t *lenptr);
+int
+Udp_connect(const char *host, const char *serv);
+int
+Udp_server(const char *host, const char *serv, socklen_t *addrlenp);
 
 
 

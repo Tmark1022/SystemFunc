@@ -6,6 +6,7 @@
  ************************************************************************/
 #include "inet_wrap.h"
 #include <netdb.h>
+#include <sys/socket.h>
 
 void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 {
@@ -23,13 +24,6 @@ void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 	}
 }
 
-void PrintAddr(FILE * stream, struct sockaddr_in * addr, const char * headStr)
-{
-	char arr[INET_ADDRSTRLEN];	
-	inet_ntop(AF_INET, &(addr->sin_addr), arr, sizeof(arr)); 
-	fprintf(stream, "%s, %s:%d\n", headStr, arr, ntohs(addr->sin_port));	
-}
-
 void SockAddrToHumanStr(struct sockaddr * addr, socklen_t addrlen, char * host, socklen_t hostlen, char *port, socklen_t portlen)
 {
 	int ret = getnameinfo(addr, addrlen, host, hostlen, port, portlen, NI_NUMERICHOST | NI_NUMERICSERV);
@@ -37,6 +31,13 @@ void SockAddrToHumanStr(struct sockaddr * addr, socklen_t addrlen, char * host, 
 		fprintf(stderr, "SockAddrToHumanStr error : %s\n", gai_strerror(ret));
 		exit(EXIT_FAILURE);
 	}
+}
+
+void PrintAddr(FILE * stream, SA * addr, const char * headStr)
+{
+	char ipstr[100], portstr[10];
+	SockAddrToHumanStr(addr, sizeof(struct sockaddr_storage), ipstr, sizeof(ipstr), portstr, sizeof(portstr));
+	fprintf(stream, "%s, %s:%s\n", headStr, ipstr, portstr);	
 }
 
 void FcntlAddFlag(int fd, int flag)
@@ -58,6 +59,17 @@ void SetNonBlocking(int fd)
 {
 	FcntlAddFlag(fd, O_NONBLOCK);
 }
+
+void * Malloc(size_t size)
+{
+	void * res = malloc(size);
+	if (NULL == res) {	
+		PrintError(stderr, 0, "malloc error", EXIT_FAILURE);	
+	}
+
+}
+
+
 
 int Socket(int domain, int type, int protocol)
 {
