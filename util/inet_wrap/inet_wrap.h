@@ -28,6 +28,7 @@ void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 void PrintAddr(FILE * stream, struct sockaddr_in * addr, const char * headStr);
 void FcntlAddFlag(int fd, int flag);
 void SetNonBlocking(int fd);
+void SockAddrToHumanStr(struct sockaddr * addr, socklen_t addrlen, char * host, socklen_t hostlen, char *port, socklen_t portlen);
 
 char *
 Sock_ntop_host(const struct sockaddr *sa, socklen_t salen);

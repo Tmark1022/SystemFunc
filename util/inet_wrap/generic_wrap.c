@@ -5,6 +5,7 @@
  @ Description	: 
  ************************************************************************/
 #include "inet_wrap.h"
+#include <netdb.h>
 
 void PrintError(FILE * stream, int my_errno, const char * headStr, int exitCode)
 {
@@ -27,6 +28,15 @@ void PrintAddr(FILE * stream, struct sockaddr_in * addr, const char * headStr)
 	char arr[INET_ADDRSTRLEN];	
 	inet_ntop(AF_INET, &(addr->sin_addr), arr, sizeof(arr)); 
 	fprintf(stream, "%s, %s:%d\n", headStr, arr, ntohs(addr->sin_port));	
+}
+
+void SockAddrToHumanStr(struct sockaddr * addr, socklen_t addrlen, char * host, socklen_t hostlen, char *port, socklen_t portlen)
+{
+	int ret = getnameinfo(addr, addrlen, host, hostlen, port, portlen, NI_NUMERICHOST | NI_NUMERICSERV);
+	if (0 != ret) {
+		fprintf(stderr, "SockAddrToHumanStr error : %s\n", gai_strerror(ret));
+		exit(EXIT_FAILURE);
+	}
 }
 
 void FcntlAddFlag(int fd, int flag)

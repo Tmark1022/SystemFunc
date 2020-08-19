@@ -3,6 +3,7 @@ Header = $(wildcard *.h)
 Res = libinet_wrap.so
 
 all:$(Src)
+	-test -x $(Res) && mv $(Res) $(Res).bak
 	gcc -fpic -shared $^ -o $(Res)
 
 install:
@@ -10,7 +11,7 @@ install:
 	cp $(Res) /usr/local/lib
 
 clean:
-	-rm -rf $(Res)
+	-rm -rf $(Res) $(Res).bak
 
 .PHONY:all clean install
 

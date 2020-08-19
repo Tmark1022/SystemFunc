@@ -20,8 +20,11 @@ int main(int argc, char *argv[]) {
 	struct addrinfo * save_res = res; 
 	
 	for (; save_res != NULL; save_res = save_res->ai_next) {
-		char * ipstr = Sock_ntop_host(save_res->ai_addr, save_res->ai_addrlen);
-		printf("canonical name : %s, ip : %s, port %d\n", save_res->ai_canonname, ipstr, ntohs(sock_get_port(save_res->ai_addr, save_res->ai_addrlen)));	
+		// char * ipstr = Sock_ntop_host(save_res->ai_addr, save_res->ai_addrlen);
+		//printf("canonical name : %s, ip : %s, port %d\n", save_res->ai_canonname, ipstr, ntohs(sock_get_port(save_res->ai_addr, save_res->ai_addrlen)));	
+		char ipstr[100], portstr[10];
+		SockAddrToHumanStr(save_res->ai_addr, save_res->ai_addrlen, ipstr, sizeof(ipstr), portstr, sizeof(portstr));
+		printf("canonical name : %s, ip : %s, port %s\n", save_res->ai_canonname, ipstr, portstr);	
 
 	}		
 
