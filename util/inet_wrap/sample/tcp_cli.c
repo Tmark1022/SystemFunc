@@ -8,7 +8,9 @@
 
 int main(int argc, char *argv[]) {
 	if (argc < 3) {
-		PrintError(stderr, -1, "need more argument", EXIT_FAILURE);
+		char tmp[1024];
+		snprintf(tmp, 1024, "usage : %s host service", argv[0]);
+		PrintError(stderr, -1, tmp, EXIT_FAILURE);
 	}
 
 	int cfd = Tcp_connect(argv[1], argv[2]);
