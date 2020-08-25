@@ -71,6 +71,13 @@ Udp_connect(const char *host, const char *serv);
 int
 Udp_server(const char *host, const char *serv, socklen_t *addrlenp);
 
+/***************************************************
+* check timeout  
+***************************************************/
+int
+Readable_timeo(int fd, int sec);
+int
+Writeable_timeo(int fd, int sec);
 
 
 #endif
