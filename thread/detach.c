@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
 		if (ret) {
 			sprintf(buf, "join (%d, %lu) error", i, arr[i]);
 			perror_thread(ret, buf, 0);
+			continue;
 		}
 		printf("get join data, (%d, %s)\n", pres->id, pres->name);
 		fflush(NULL);
