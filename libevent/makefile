@@ -4,7 +4,7 @@ Res = $(patsubst %.c, %, $(Src))
 all:$(Res)
 
 $(Res):%:%.c
-	gcc $< -o $@ -Wall -g -levent -levent_pthreads -pthread
+	gcc $< -o $@ -Wall -g -levent -levent_pthreads -pthread -linet_wrap
 
 myhttpd_daemon : myhttpd_daemon.c
 	gcc $< -ldaemon -o $@ -Wall -g -levent
