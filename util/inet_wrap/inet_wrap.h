@@ -36,6 +36,8 @@ char *
 Sock_ntop_host(const struct sockaddr *sa, socklen_t salen);
 int
 sock_get_port(const struct sockaddr *sa, socklen_t salen);
+char *
+Sock_ntop(const struct sockaddr *sa, socklen_t salen);
 
 /***************************************************
 * socket 
