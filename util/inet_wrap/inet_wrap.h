@@ -48,6 +48,8 @@ int Listen(int socket, int backlog);
 int Accept(int socket, struct sockaddr *address, socklen_t * address_len);
 int Connect(int socket, const struct sockaddr *address, socklen_t address_len);
 int Close(int fd);
+ssize_t Send(int sockfd, const void *buf, size_t len, int flags);
+ssize_t Recv(int sockfd, void *buf, size_t len, int flags);
 
 /***************************************************
 * io function 

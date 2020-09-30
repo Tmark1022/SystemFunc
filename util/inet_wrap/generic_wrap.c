@@ -150,6 +150,24 @@ ssize_t Write(int fd, const void *buf, size_t count)
 	return cnt;
 }
 
+ssize_t Send(int sockfd, const void *buf, size_t len, int flags)
+{
+	ssize_t cnt = send(sockfd, buf, len, flags);
+	if (-1 == cnt) {
+		PrintError(stderr, 0, "call Send failed", EXIT_FAILURE);		
+	}
+	return cnt;
+}
+
+ssize_t Recv(int sockfd, void *buf, size_t len, int flags)
+{
+	ssize_t cnt = recv(sockfd, buf, len, flags);
+	if (-1 == cnt) {
+		PrintError(stderr, 0, "call recv failed", EXIT_FAILURE);		
+	}
+	return cnt;
+}
+
 // @buf : 缓冲区指针
 // count : 要读取的字节数
 ssize_t ReadCount(int fd, void *buf, size_t count)
