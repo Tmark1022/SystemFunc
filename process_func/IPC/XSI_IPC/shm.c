@@ -2,7 +2,8 @@
  @ Author	: tmark
  @ Created Time	: Thu 11 Jun 2020 02:53:26 PM CST
  @ File Name	: shm.c
- @ Description	: 开辟共享内存， 多个无关系进行进行通行（简单生产者消费者）
+ @ Description	: 开辟共享内存， 多个无关系进程进行通行（简单生产者消费者）
+		  共享内存中使用pthread_mutex实现进程间的同步
  ************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
