@@ -3,6 +3,9 @@
 #include <dlfcn.h>
 #include <string.h>
 
+int a_data = 1; 
+int a_bss; 
+
 void *handle = NULL;
 char *error;
 
@@ -52,8 +55,9 @@ int main(int argc, char *argv[]) {
 				void (*funp)() = (void (*)())res;
 				funp();
 			} else if (strstr(str, "val")) {
-				int * valp = (int *)res;
+				int * valp = (int *)res;	
 				fprintf(stdout, "%s 's val is %d\n", str, *valp);
+				fprintf(stdout, "a_data %lx, a_bss %lx, valp %lx\n", (long)&a_data, (long)&a_bss, (long)valp);
 			} else {
 				fprintf(stderr, "don't recongnize\n");
 			}
