@@ -57,6 +57,8 @@ int main(int argc, char *argv[]) {
 			} else if (strstr(str, "val")) {
 				int * valp = (int *)res;	
 				fprintf(stdout, "%s 's val is %d\n", str, *valp);
+				// 运行时动态链接对应在so中定义的全局变量所在的内存空间 与 
+				// 加载时链接的不一致（加载时的存在于可执行目标文件的.bss中, 可以参考main2.c, 反汇编看下.bss段）
 				fprintf(stdout, "a_data %lx, a_bss %lx, valp %lx\n", (long)&a_data, (long)&a_bss, (long)valp);
 			} else {
 				fprintf(stderr, "don't recongnize\n");
