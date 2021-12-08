@@ -66,7 +66,7 @@ void sig_alrm(int signo)
 int AcceptAlarm(int socket, struct sockaddr *address, socklen_t * address_len, unsigned int sec)
 {
 
-	// signal 默认居然是自动恢复慢速系统调用， fuck
+	// linux signal 默认居然是自动恢复慢速系统调用， fuck
 	// signal(SIGALRM, sig_alrm);
 	struct sigaction sa;
 	sa.sa_handler = sig_alrm;
