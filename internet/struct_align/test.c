@@ -4,15 +4,18 @@
  @ File Name	: test.c
  @ Description	: 
  ************************************************************************/
-// set packing size, suppress padding
-// pragma pack(n), individual member 的size小于n还是按照自身的size大小进行内存对齐，大于n的就按照n进行。
-// Expected #pragma pack parameter to be '1', '2', '4', '8', or '16' on gcc compiler
-// 64位架构， 相当于默认值n为8
-// 32位架构， 相当于默认值n为4
+/*
+	use directive 'pragma pack(n)' to set packing size, suppress padding
+	pragma pack(n), individual member 的size小于n还是按照自身的size大小进行内存对齐，大于n的就按照n进行。
+	Expected #pragma pack parameter to be '1', '2', '4', '8', or '16' on gcc compiler
 
-// #pragma pack(4)
+	64位架构， 相当于默认值n为8
+	32位架构， 相当于默认值n为4
+		
+	测试中发现， pragma pack(n) 设置的n大于操作系统的word长时并不生效， 还是按word长为pack size
+*/
 
-
+#pragma pack(4)
 
 #include <stdio.h>
 #include <stdlib.h>
